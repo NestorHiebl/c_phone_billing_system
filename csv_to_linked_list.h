@@ -112,13 +112,15 @@
         FILE *open_csv(const char* filename);
         int close_csv(FILE *filepointer);
 
-        int parse_rate_csv(FILE *filename);
-        int parse_call_csv(FILE *filename);
+        rate_linked_list *parse_rate_csv(FILE *filename);
+        user_list *parse_call_csv(FILE *filename);
     
         // Pattern checking functions
 
         int validate_phone_number(char *phone_number);
         int validate_duration(int duration);
+
+        char *censor_calee_numer(char *callee_number);
 
         // Rate linked list functions
 

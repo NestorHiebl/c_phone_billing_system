@@ -67,3 +67,32 @@ int close_csv(FILE *filepointer) {
 
     return 1;
 }
+
+
+rate_linked_list *parse_rate_csv(FILE *filename) {
+    
+    rate_linked_list *head = NULL;
+
+    char csv_line[1024];
+
+    while (!(feof(filename))) {
+        if ((fgets(csv_line, 1024, filename)) != NULL) {
+            
+        } else {
+            fprintf(stderr, "Loading line in csv file failed, aborting\n");
+            return NULL;
+        }
+        
+         
+    }
+    
+}
+
+/**
+ *      Validate phone number
+ * 
+ *      @brief checks for errors in a phone number 
+ */
+int validate_phone_number(char *phone_number) {
+
+}
