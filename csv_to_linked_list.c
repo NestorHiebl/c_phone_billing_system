@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "csv_to_linked_list.h"
+#include <unistd.h>
 
 /**
  *      Open CSV
@@ -49,8 +50,8 @@ FILE *open_csv(const char* filename){
  *      @param filename The pointer to csv file.
  * 
  *      @returns An integer indicator of the function's success
- *      @retval 0 If the file closing failed
- *      @retval 1 If the file closing was successful
+ *      @retval 0 If file closing failed
+ *      @retval 1 If file closing was successful
  */
 int close_csv(FILE *filepointer) {
 

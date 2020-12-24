@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifndef CSV_TO_LINKED_LIST_FUNC
 
@@ -31,7 +32,6 @@
          *      being loaded in.
          * 
          *      @param extension The number extension, formatted as a @c string to make longest match searches easier.
-         *      @param region The region descriptor in @c string format. Has no practical function as of yet.
          *      @param rate The call rate in @c double format. Determines the cost of a call to the extension per minute.
          * 
          *      @param previous The previous node. @c NULL for the head node.
@@ -40,9 +40,6 @@
         typedef struct rate_linked_list {
             
             char *extension;
-
-            char *region;
-
             double rate;
 
             struct rate_linked_list *previous;
@@ -115,8 +112,8 @@
         FILE *open_csv(const char* filename);
         int close_csv(FILE *filepointer);
 
-        int parse_rate_csv(FILE filename);
-        int parse_call_csv(FILE filename);
+        int parse_rate_csv(FILE *filename);
+        int parse_call_csv(FILE *filename);
     
         // Pattern checking functions
 
@@ -125,20 +122,24 @@
 
         // Rate linked list functions
 
-        int append_rate_by_value(char *extension, char *region, double rate);
-        
-        void print_rate_list();
-        void print_rate_list_slice(int starting_index, int ending_index);
-        int delete_rate_list();
+        int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extension, double rate);
+        void print_rate_list(rate_linked_list *head);
+        void print_rate_list_slice(rate_linked_list *head, size_t starting_index, size_t ending_index);
+        rate_linked_list *search_by_longest_extension_match(rate_linked_list *head, const char *exension);
+        int delete_rate_list(rate_linked_list **head);
 
-        // Bill linked list functions
+        // User linked list functions
         
         int append_user(user_list **head, user_list **tail, char *number);
-        void print_bill_list(user_list *head);
-        void print_bill_list_slice(user_list *head, int starting_index, int ending_index);
-        int delete_bill_list(user_list **head);
+        void print_user_list(user_list *head);
+        void print_user_list_slice(user_list *head, size_t starting_index, size_t ending_index);
+        int delete_user_list(user_list **head);
 
-        int generate_bill_file(user_list *bill);
-        int generate_cdr_file(user_list *bill);
+        int add_user_call(user_list *user, const char *callee, size_t duration, double price, size_t year, size_t month);
+
+        int calculate_user_stats(user_list *user);
+
+        int generate_monthly_bill_files(user_list *bill);
+        int generate_monthly_cdr_files(user_list *bill);
 
 #endif
