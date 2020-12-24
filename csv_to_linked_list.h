@@ -3,8 +3,16 @@
  *      @author Nestor Hiebl
  *      @date December 23, 2020
  *      
- *      @brief The external function header for the csv based phone billing project. It saves the data in a number of  
-*/
+ *      @brief The external function header for the csv based phone billing project. It saves the data in a double linked list with the following structure:
+ * 
+ *      user -> user -> user -> user -> user -> user -> user ->...
+ *        |       |       |       |       |       |       | 
+ *      call    call    call    call    call    call    call
+ *        |       |       |       |       |       |       | 
+ *      call    call    call    call    call    call    call
+ *        |       |       |       |       |       |       | 
+ *      call    call    call    call    call    call    call
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +22,19 @@
 
     #define CSV_TO_LINKED_LIST_FUNC
 
+        /**
+         *      @typedef Rate linked list
+         * 
+         *      @brief The call rate node. Only used to store rate information. The data inside this structure will not be changed after 
+         *      being loaded in.
+         * 
+         *      @param extension The number extension, formatted as a string to make longest match searches easier.
+         *      @param region The region descriptor in string format. Has no practical function as of yet.
+         *      @param rate The call rate in double format. Determines the cost of a call to the extension per minute.
+         * 
+         *      @param previous The previous node. NULL for the head node.
+         *      @param next The next node. NULL for the tail node.      
+         */
         typedef struct rate_linked_list {
             
             char *extension;
@@ -27,36 +48,65 @@
 
         } call_linked_list;
 
-        typedef struct caller_monthly_bill {
+        /**
+         *      @typedef User list node
+         * 
+         *      @brief The user node. It contains the head of another linked list with all of the respective user's calls.
+         *      The rest of the node's fields are populated based on this list.
+         * 
+         *      @param number The user's unique number in string format. Used as the sole identifier for the user.
+         *      @param call_list_head The head of the user's full list of calls.
+         * 
+         *      @param total_call_number Total number of calls the user has made. Only used for final stat calculation.
+         *      @param total_call_duration Total duration the user's calls. Only used for final stat calculation.
+         *      @param total_bill The user's total phone bill. Only used for final stat calculation.
+         * 
+         *      @param previous The previous node. NULL for the head node.
+         *      @param next The next node. NULL for the tail node.      
+         */
+        typedef struct user_list {
             
             char *number;
+
+            user_call_list *call_list_head;
+
+            size_t total_call_number;
+            size_t total_call_duration;
+            double total_bill;
+
+            user_list *previous;
+            user_list *next;
+
+        } user_list;
+
+        /**
+         *      @typedef Call linked list
+         * 
+         *      @brief The node for a single call.
+         * 
+         *      @param callee The number that was called in string format, with the final 3 digits replaced with '*'.
+         *      @param duration The duration of the call.
+         *      @param price The call price in double format. Calculated from the duration and the appropriate node in the rate linked list.
+         * 
+         *      @param year The year the call was made in.
+         *      @param month The month the call was made in.
+         * 
+         *      @param previous The previous node. NULL for the head node.
+         *      @param next The next node. NULL for the tail node.      
+         */        
+        typedef struct user_call_list {
+            
+            char *callee;
+            size_t duration;
+            double price;
 
             size_t year;
             size_t month;
 
-            user_monthly_call_list *call_list_head;
+            user_call_list  *previous;
+            user_call_list *next;
 
-            size_t total_call_number;
-            size_t total_call_duration;
-            size_t total_bill;
-
-            caller_monthly_bill *previous;
-            caller_monthly_bill *next;
-
-        } caller_monthly_bill;
-        
-        typedef struct user_monthly_call_list {
-            
-            char *callee;
-
-            size_t duration;
-
-            double price;
-
-            user_monthly_call_list  *previous;
-            user_monthly_call_list *next;
-
-        } user_monthly_call_list;
+        } user_call_list;
         
 
         // Functions for file handling
@@ -75,12 +125,12 @@
         int delete_rate_list(call_linked_list **head);
 
         // Bill linked list functions
-        int append_bill_by_value(caller_monthly_bill **head, caller_monthly_bill **tail, char *number, size_t year, size_t month);
-        void print_bill_list(caller_monthly_bill *head);
-        void print_bill_list_slice(caller_monthly_bill *head, int starting_index, int ending_index);
-        int delete_bill_list(caller_monthly_bill **head);
+        int append_user(user_list **head, user_list **tail, char *number);
+        void print_bill_list(user_list *head);
+        void print_bill_list_slice(user_list *head, int starting_index, int ending_index);
+        int delete_bill_list(user_list **head);
 
-        int generate_bill_file(caller_monthly_bill *bill);
-        int generate_cdr_file(caller_monthly_bill *bill);
+        int generate_bill_file(user_list *bill);
+        int generate_cdr_file(user_list *bill);
 
 #endif

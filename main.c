@@ -3,7 +3,9 @@
  *      @author Nestor Hiebl
  *      @date December 23, 2020
  *      
- *      @brief The main procedure for the csv based phone billing project 
+ *      @brief The main procedure for the csv based phone billing project.
+ * 
+ *      
 */
 
 #include <stdio.h>
