@@ -13,7 +13,7 @@
  *        |       |       |       |       |       |       | 
  *      call    call    call    call    call    call    call
  * 
- *      https://github.com/NestorJankovic/c_phone_billing_system/tree/master
+ *      https://github.com/NestorHiebl/c_phone_billing_system
  */
 
 #include <stdio.h>

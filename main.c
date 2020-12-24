@@ -5,7 +5,7 @@
  *      
  *      @brief The main procedure for the csv based phone billing project.
  * 
- *      https://github.com/NestorJankovic/c_phone_billing_system/tree/master
+ *      https://github.com/NestorHiebl/c_phone_billing_system
  * 
  *      
 */
@@ -55,7 +55,7 @@ int main(int argc, char **argv){
         fprintf(stderr, "Error loading files, aborting\n");
         return EXIT_FAILURE;
     }
-    
+    // Line 509842 in the csv has a great error example!
 
     close_csv(call_rates);
     close_csv(call_record);

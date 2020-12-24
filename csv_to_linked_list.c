@@ -5,7 +5,7 @@
  *      
  *      @brief The external functions for the csv based phone billing project 
  * 
- *      https://github.com/NestorJankovic/c_phone_billing_system/tree/master
+ *      https://github.com/NestorHiebl/c_phone_billing_system
 */
 
 #include <stdio.h>
