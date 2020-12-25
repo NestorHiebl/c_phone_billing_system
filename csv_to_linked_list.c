@@ -67,21 +67,37 @@ int close_csv(FILE *filepointer) {
     return 1;
 }
 
-
+/**
+ *      Parse rate csv
+ * 
+ *      The iterative logic for parsing rows and fields is based on @c fgets and @c strtok , respectfully. Potential error scenarions are:
+ *      @li A row in the csv is longer than 1024 characters. The function will notify you, but won't attempt to salvage the row.
+ *      @li A field is missing. Strtok ignores consecutive delimiters, so any rows with NaN fields will be discarded.
+ * 
+ *      @brief Builds a full rate linked list based on a csv file pointer
+ *      
+ *      @param filename The @c FILE pointer for the csv
+ * 
+ *      @returns A pointer to the head of the generated linked list. Note that no tail is provided.
+ */
 rate_linked_list *parse_rate_csv(FILE *filename) {
     
     // rate_linked_list *head = NULL;
 
     char csv_line[1024];
 
+    rate_linked_list *head = NULL;
+    rate_linked_list *tail = NULL;
+
+    size_t line_counter = 0;
     while (!(feof(filename))) {
         if ((fgets(csv_line, 1024, filename)) != NULL) {
-            if ((csv_line[strlen(csv_line) - 1]) == '\n') {
-                // Going smoothly, the line has been loaded in successfuly
-                printf("Line terminates in a newline!\n");
-
             
+            // Going smoothly, the line has been loaded in successfuly
 
+            if (((csv_line[strlen(csv_line) - 1]) == '\n')) {
+                printf("Line ended\n");
+                
             } else if (feof(filename)) {
                 // We've reached the end of the file
                 printf("File ended\n");    
@@ -89,46 +105,57 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
                 // We're dealing with a really long line
                 printf("Line longer than 1024 characters\n");  
             } 
+                
+            char *extension_token = strtok(csv_line, ",");
+            if (extension_token == NULL) {
+                fprintf(stderr, "Line %lu is empty\n", line_counter);
+                continue;
+            }
+            printf("%s ", extension_token);
+            
+            char *region_token = strtok(NULL, ",");
+            if (region_token == NULL) {
+                fprintf(stderr, "Line %lu is missing two arguments\n", line_counter);
+                continue;
+            }
+            printf("%s ", region_token);
+
+            char *rate_token = strtok(NULL, ",");
+            if (rate_token == NULL) {
+                fprintf(stderr, "Line %lu is missing one argument\n", line_counter);
+                continue;
+            }
+            printf("%s ", rate_token);
+            
+            if (strtok(NULL, ",") != NULL) {
+                fprintf(stderr, "Additional field found on line %lu\n", line_counter);
+                continue;
+            }
+
+            extension_token = validate_extension(extension_token);
+            double rate = validate_rate(rate_token);   
+            
+            if ((extension_token != NULL) && rate) {
+                // At this point, the node is ready for creation
+                append_rate(&head, &tail, extension_token, rate);
+            } else {
+                printf("Invalid extension or rate found on line %lu\n", line_counter);
+                continue;
+            }
+            
+            
+
         } else {
             // We couldn't load a line in
-            fprintf(stderr, "Loading line in csv file failed, aborting\n");
-            return NULL;    
+            fprintf(stderr, "Loading line %lu in csv file failed, aborting\n", line_counter);
+            return head;    
         }
+        line_counter++;
     }
-    return NULL;
+    return head;
 }
 
-char *strsep_custom(char **stringp) {
-    
-    if (*stringp == NULL) {
-        return NULL;
-    }
+int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extension, double rate) {
 
-    char comma = ',';
-
-    
-
-    if (strchr(*stringp, comma) != NULL) {
-        
-        // Placeholder var to remember the starting position of the current token
-        char *token = *stringp;
-
-        // Move the string pointer to the next comma
-        *stringp = strchr(*stringp, comma);
-
-        // Replace the comma with a string terminator
-        **stringp = '\0';
-
-        // Move the string pointer to the next character
-        *stringp += 1;
-
-        return token;
-    } else {
-        char *token = *stringp;
-
-        *stringp = NULL;
-
-        return token;
-    }
     
 }
