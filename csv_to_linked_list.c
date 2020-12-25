@@ -89,6 +89,7 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
     rate_linked_list *head = NULL;
     rate_linked_list *tail = NULL;
 
+    // Used for debugging
     size_t line_counter = 0;
     while (!(feof(filename))) {
         if ((fgets(csv_line, 1024, filename)) != NULL) {
@@ -103,7 +104,8 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
                 printf("File ended\n");    
             } else {
                 // We're dealing with a really long line
-                printf("Line longer than 1024 characters\n");  
+                printf("Line longer than 1024 characters\n");
+                continue;  
             } 
                 
             char *extension_token = strtok(csv_line, ",");
@@ -143,10 +145,9 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
                 continue;
             }
             
-            
 
         } else {
-            // We couldn't load a line in
+            // Couldn't load a line in
             fprintf(stderr, "Loading line %lu in csv file failed, aborting\n", line_counter);
             return head;    
         }
@@ -155,7 +156,60 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
     return head;
 }
 
+char *validate_extension(char *extension){
+    return NULL;
+}
+
+
+double validate_rate(char *rate){
+    return 0.0;
+}
+
 int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extension, double rate) {
+
+    if (extension == NULL) {
+        fprintf(stderr, "Extension string empty, aborting\n");
+        return 0;
+    } else if (!(*head == NULL) && ((*tail)->next) != NULL) {
+        fprintf(stderr, "Head node is not last node, aborting\n");
+        return 0;
+    }
+    
+    rate_linked_list *new_node = malloc(sizeof(rate_linked_list));
+    if (new_node == NULL) {
+        fprintf(stderr, "Not enough memory to create new node\n");
+        return 0;
+    }
+
+    // Initialize extension
+    new_node->extension = malloc(sizeof(extension));
+    if (new_node->extension == NULL) {
+        fprintf(stderr, "Not enough memory to initialize extension\n");
+        return 0;
+    } else {
+        strcpy(new_node->extension, extension);    
+    }
+    
+    new_node->rate = rate;
+    
+    if (*head == NULL) {
+        // The list is being initialized
+
+        new_node->previous = NULL;
+        new_node->next = NULL;
+
+        *head = new_node;
+        *tail = new_node;
+    } else {
+        // The node is being appended to an existing list
+    
+        new_node->previous = *tail;
+        new_node->next = NULL;
+
+        *tail = new_node;
+    }
+    
+    return 1;
 
     
 }
