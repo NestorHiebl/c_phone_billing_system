@@ -80,17 +80,7 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
                 // Going smoothly, the line has been loaded in successfuly
                 printf("Line terminates in a newline!\n");
 
-                char *field = NULL;
-                size_t field_counter = 0;
-
-                field = strsep(&csv_line, ",");
-                printf("%s ", field);
-
-                while ((field = strsep(&csv_line, ",")) != NULL) {
-                    printf("%s ", field);
-                }
-                
-                printf("\n");
+            
 
             } else if (feof(filename)) {
                 // We've reached the end of the file
@@ -108,37 +98,37 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
     return NULL;
 }
 
-char **strsep_custom(char **stringp) {
+char *strsep_custom(char **stringp) {
     
     if (*stringp == NULL) {
         return NULL;
     }
-    
-    char **retval = malloc(sizeof(char*));
-    if (retval == NULL) {
-        fprintf(stderr, "Error allocating space for strsep_custom return string\n");
-        return NULL;
-    }
-    
-
-    char *current = *stringp;
 
     char comma = ',';
 
-    while (strchr(current, comma) != NULL) {
+    
+
+    if (strchr(*stringp, comma) != NULL) {
         
         // Placeholder var to remember the starting position of the current token
-        char *token = current;
+        char *token = *stringp;
 
-        // Move the current pointer to the next comma
-        current = strchr(current, comma);
+        // Move the string pointer to the next comma
+        *stringp = strchr(*stringp, comma);
 
         // Replace the comma with a string terminator
-        *current = '\0';
+        **stringp = '\0';
 
-        // Allocate space for the current token
-        *retval = malloc(sizeof(char) * strlen(token));
-        strcpy(retval, token);
+        // Move the string pointer to the next character
+        *stringp += 1;
+
+        return token;
+    } else {
+        char *token = *stringp;
+
+        *stringp = NULL;
+
+        return token;
     }
-
+    
 }

@@ -122,7 +122,7 @@
 
         char *censor_calee_numer(char *callee_number);
 
-        char **strsep_custom(char **stringp);
+        char *strsep_custom(char **stringp);
 
         // Rate linked list functions
 

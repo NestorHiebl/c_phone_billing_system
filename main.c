@@ -64,7 +64,21 @@ int main(int argc, char **argv){
 
     #ifdef DEBUG
     printf("%li, %li, %f\n", total_call_number, total_call_duration, total_call_price);
+
+    char *strtest = malloc(sizeof("this,is,a,test,string"));
+    char *strtest_copy = strtest;
+    strcpy(strtest, "this,is,a,test,string");
+
+    char* token = NULL;
+    while ((token = strsep_custom(&strtest)) != NULL) {
+        printf("%s ", token);
+    }
+    printf("\n");
+    free(strtest_copy);
+    
     #endif
+
+
 
     return EXIT_SUCCESS;
 }
