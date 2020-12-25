@@ -122,6 +122,8 @@
 
         char *censor_calee_numer(char *callee_number);
 
+        char **strsep_custom(char **stringp);
+
         // Rate linked list functions
 
         int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extension, double rate);

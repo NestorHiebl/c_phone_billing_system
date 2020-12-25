@@ -57,6 +57,8 @@ int main(int argc, char **argv){
     }
     // Line 509842 in the csv has a great error example!
 
+    parse_rate_csv(call_rates);
+
     close_csv(call_rates);
     close_csv(call_record);
 
