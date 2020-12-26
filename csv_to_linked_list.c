@@ -157,13 +157,19 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
 }
 
 char *validate_extension(char *extension){
+    printf("%s\n", extension);
     return NULL;
 }
 
 
 double validate_rate(char *rate){
+    printf("%s\n", rate);
     return 0.0;
 }
+
+/*****************************************************************************************************************
+ * RATE LINKED LIST FUNCTIONS                                                                                    *
+ *****************************************************************************************************************/
 
 /**
  *      Appent rate node
@@ -214,11 +220,14 @@ int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extensio
         *tail = new_node;
     } else {
         // The node is being appended to an existing list
-    
+        (*tail)->next = new_node;
+
         new_node->previous = *tail;
         new_node->next = NULL;
 
         *tail = new_node;
+
+        printf("Appended!\n");
     }
     
     return 1;    
@@ -248,7 +257,7 @@ void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_inde
         // If no start and end indexes were given print the whole list
 
         while (current != NULL) {
-        printf("The rate for the extension \"%s\" equals %2f.\n", current->extension, current->rate);
+        printf("The rate for the extension \"%s\" equals %f.\n", current->extension, current->rate);
         current = current->next;
         }    
     } else {
@@ -271,3 +280,96 @@ void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_inde
     }
     return;   
 }
+
+
+int delete_rate_list(rate_linked_list **head) {
+    if (*head == NULL) {
+        fprintf(stderr, "Cannot delete NULL list, aborting\n");
+        return 0;
+    }
+
+    rate_linked_list *current = *head;
+
+    while (*head != NULL) {
+        current = *head;
+
+        free(current->extension);                       
+        current->extension = NULL;
+
+        *head = (*head)->next;
+        free(current);
+        current = NULL;
+    }
+    
+    return 1;
+}
+
+/*****************************************************************************************************************
+ * USER LINKED LIST FUNCTIONS                                                                                    *
+ *****************************************************************************************************************/
+
+/**
+ *      Appent user node
+ * 
+ *      @brief Appends a new node to the user linked list. If the head argument is NULL, it initializes a list instead.
+ *      Total call duration, number and price are initialized at 0. Call list head is initialized as NULL.
+ *      
+ *      @param head A double pointer to the head of the list, which will be changed dynamically.
+ *      @param tail A double pointer to the tail of the list, which will be changed dynamically.
+ *      @param number The users number, which will be used as their sole identifier.
+ * 
+ *      @returns 1 if the function suceeds, 0 if it fails.
+ */
+int append_user(user_list **head, user_list **tail, char *number) {
+
+    if (number == NULL) {
+        fprintf(stderr, "Number string empty, aborting\n");
+        return 0;
+    } else if (!(*head == NULL) && ((*tail)->next) != NULL) {
+        fprintf(stderr, "Head node is not last node, aborting\n");
+        return 0;
+    }
+    
+    user_list *new_node = malloc(sizeof(user_list));
+    if (new_node == NULL) {
+        fprintf(stderr, "Not enough memory to create new user node\n");
+        return 0;
+    }
+
+    // Initialize number
+    new_node->number = malloc(sizeof(number));
+    if (new_node->number == NULL) {
+        fprintf(stderr, "Not enough memory to initialize number\n");
+        return 0;
+    } else {
+        strcpy(new_node->number, number);    
+    }
+    
+    new_node->total_bill = 0;
+    new_node->total_call_duration = 0;
+    new_node->total_call_number = 0;
+
+    new_node->call_list_head = NULL;
+    
+    if (*head == NULL) {
+        // The list is being initialized
+
+        new_node->previous = NULL;
+        new_node->next = NULL;
+
+        *head = new_node;
+        *tail = new_node;
+    } else {
+        // The node is being appended to an existing list
+        (*tail)->next = new_node;
+
+        new_node->previous = *tail;
+        new_node->next = NULL;
+
+        *tail = new_node;
+    }
+    
+    return 1;    
+}
+
+// Note - The User list deletition function needs to be nested, because each node contains its own linked list.
