@@ -165,6 +165,18 @@ double validate_rate(char *rate){
     return 0.0;
 }
 
+/**
+ *      Appent rate node
+ * 
+ *      @brief Appends a new node to the rate linked list. If the head argument is NULL, it initializes a list instead.
+ *      
+ *      @param head A double pointer to the head of the list, which will be changed dynamically.
+ *      @param tail A double pointer to the tail of the list, which will be changed dynamically.
+ *      @param extension The extension string, cannot be NULL.
+ *      @param rate The rate associated with the extension.
+ * 
+ *      @returns 1 if the function suceeds, 0 if it fails.
+ */
 int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extension, double rate) {
 
     if (extension == NULL) {
@@ -209,7 +221,53 @@ int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extensio
         *tail = new_node;
     }
     
-    return 1;
+    return 1;    
+}
 
+/**
+ *      Print rate list
+ * 
+ *      @brief Prints a slice of a rate linked list. If both indexes are set to 0, prints the entire list instead.
+ * 
+ *      @param head The head of the linked list.
+ *      @param start_index The starting index of the list slice.
+ *      @param end_index The ending index of the list slice.
+ */
+void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_index) {
+    if (head == NULL) {
+        fprintf(stderr, "Cannot print NULL list, aborting\n");
+        return;
+    } else if (start_index > end_index) {
+        fprintf(stderr, "Starting index larger than ending index, aborting");
+        return;
+    }
     
+    
+    rate_linked_list *current = head;
+    if ((start_index == 0) && (end_index == 0)) {
+        // If no start and end indexes were given print the whole list
+
+        while (current != NULL) {
+        printf("The rate for the extension \"%s\" equals %2f.\n", current->extension, current->rate);
+        current = current->next;
+        }    
+    } else {
+        // Print list from start index to end index
+        size_t i = 0;
+
+        while (current != NULL) {
+            if (i >= start_index) {
+                // If we've reached the start index, print the node
+                printf("The rate for the extension \"%s\" equals %2f.\n", current->extension, current->rate);
+            }
+
+            if (i > end_index) {
+                // If we've exceeded the end index, exit the while loop
+                break;
+            }
+            i++;
+            current = current->next;
+        }
+    }
+    return;   
 }

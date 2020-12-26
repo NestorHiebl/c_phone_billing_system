@@ -129,7 +129,7 @@
         // Rate linked list functions
 
         int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extension, double rate);
-        void print_rate_list(rate_linked_list *head);
+        void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_index);
 
         rate_linked_list *search_by_longest_extension_match(rate_linked_list *head, const char *exension);
         int delete_rate_list(rate_linked_list **head);
