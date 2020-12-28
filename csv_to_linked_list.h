@@ -120,7 +120,7 @@
         // Pattern checking functions
 
         char *validate_phone_number(char *phone_number);
-        char *validate_extension(char *extension);
+        char *validate_extension(char **extension);
         double validate_rate(char *rate);
 
         char *censor_calee_numer(char *callee_number);

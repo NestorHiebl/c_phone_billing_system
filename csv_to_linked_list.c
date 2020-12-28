@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "csv_to_linked_list.h"
+#include <ctype.h>
 
 /**
  *      Open CSV
@@ -137,7 +138,7 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
                 continue;
             }
 
-            //extension_token = validate_extension(extension_token);
+            extension_token = validate_extension(&extension_token);
             //double rate = validate_rate(rate_token);   
             
             if ((extension_token != NULL) && rate_token) {
@@ -159,9 +160,57 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
     return head;
 }
 
-char *validate_extension(char *extension){
-    printf("%s\n", extension);
-    return NULL;
+/**
+ *      Validate extension
+ * 
+ *      @brief Checks if a given extension is legal in E.164 and formats it by removing leading zeros, if need be.
+ * 
+ *      @param extension A double pointer to the extension. May be altered.
+ *  
+ *      @return A pointer to the valid extension or NULL
+ */
+char *validate_extension(char **extension){
+    if (*extension == NULL) {
+        fprintf(stderr, "Cannot validate NULL string\n");
+        return NULL;
+    }
+    
+    // Remove leading zeros
+    while (**extension == '0') {
+        *extension = (*extension) + 1;
+    }
+    
+    size_t extension_len = strlen(*extension);
+
+    if (extension_len > 11) {
+        // Extension too long, invalid
+        return NULL;
+    }
+    
+
+    // Initialize the legality flag as zero to exclude extensions that don't enter the loop at all (len = 0)
+    unsigned short int legal = 0;
+
+    for (size_t i = 0; i < extension_len; i++) {
+        legal = 1;
+
+        if (!(isdigit((*extension)[i]))) {
+            legal = 0;
+            break;
+        }
+    }
+    
+    // There should be a procedure for comparing every string with every other string to avoid duplicates, this would be a slightly more resource friendly place for that
+
+    if (legal) {
+        return *extension;
+    } else {
+        return NULL;
+    }
+    
+    
+    
+
 }
 
 
