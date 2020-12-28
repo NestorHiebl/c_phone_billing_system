@@ -27,7 +27,7 @@ FILE *open_csv(const char* filename){
     
     // Checks if the passed filename ends in ".csv"
     if ((strcmp(&filename[filename_len - 4], ".csv")) != 0) {
-        fprintf(stderr, "Please provide a csv file\n");
+        fprintf(stderr, "Please provide a valid csv file\n");
         return NULL;
     }
 
@@ -97,7 +97,10 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
             // Going smoothly, the line has been loaded in successfuly
 
             if (((csv_line[strlen(csv_line) - 1]) == '\n')) {
+
+                // Remove the trailing newline from the csv row
                 printf("Line ended\n");
+                csv_line[strlen(csv_line) - 1] = '\0';
                 
             } else if (feof(filename)) {
                 // We've reached the end of the file
@@ -113,14 +116,14 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
                 fprintf(stderr, "Line %lu is empty\n", line_counter);
                 continue;
             }
-            printf("%s ", extension_token);
+            printf("%s, ", extension_token);
             
             char *region_token = strtok(NULL, ",");
             if (region_token == NULL) {
                 fprintf(stderr, "Line %lu is missing two arguments\n", line_counter);
                 continue;
             }
-            printf("%s ", region_token);
+            printf("%s, ", region_token);
 
             char *rate_token = strtok(NULL, ",");
             if (rate_token == NULL) {
@@ -134,12 +137,12 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
                 continue;
             }
 
-            extension_token = validate_extension(extension_token);
-            double rate = validate_rate(rate_token);   
+            //extension_token = validate_extension(extension_token);
+            //double rate = validate_rate(rate_token);   
             
-            if ((extension_token != NULL) && rate) {
+            if ((extension_token != NULL) && rate_token) {
                 // At this point, the node is ready for creation
-                append_rate(&head, &tail, extension_token, rate);
+                append_rate(&head, &tail, extension_token, /**** placeholder value ****/ 1.0);
             } else {
                 printf("Invalid extension or rate found on line %lu\n", line_counter);
                 continue;
@@ -281,7 +284,14 @@ void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_inde
     return;   
 }
 
-
+/**
+ *      Delete rate linked list     
+ * 
+ *      @brief Deletes a rate linked list, freeing memory.
+ * 
+ *      @param head A double pointer to the head of the list. Will be set to NULL.
+ *      @return 1 if successful, 0 if not. 
+ */
 int delete_rate_list(rate_linked_list **head) {
     if (*head == NULL) {
         fprintf(stderr, "Cannot delete NULL list, aborting\n");

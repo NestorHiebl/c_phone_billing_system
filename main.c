@@ -45,9 +45,11 @@ int main(int argc, char **argv){
     */
     double total_call_price = 0;
 
+    // Push the first non-option argument into the call rate variable
     getopt(argc, argv, "--");
     FILE *call_rates = open_csv(optarg);
 
+    // Push the second non-option argument into the call record variable
     getopt(argc, argv, "--");
     FILE *call_record = open_csv(optarg);
 
@@ -57,7 +59,8 @@ int main(int argc, char **argv){
     }
     // Line 509842 in the csv has a great error example!
 
-    // parse_rate_csv(call_rates);
+    rate_linked_list * rate_head = parse_rate_csv(call_rates);
+    print_rate_list(rate_head, 0, 0);
 
     close_csv(call_rates);
     close_csv(call_record);

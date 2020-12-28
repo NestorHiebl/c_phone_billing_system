@@ -90,7 +90,7 @@
          *      @param total_bill The user's total phone bill. Only used for final stat calculation.
          * 
          *      @param previous The previous node. @c NULL for the head node.
-         *      @param next The next node. @c NULL for the tail node.      
+         *      @param next The next node. @c NULL for the tail node.    
          */
         typedef struct user_list {
             
