@@ -112,12 +112,12 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
                 continue;  
             } 
                 
-            char *extension_token = strtok(csv_line, ",");
-            if (extension_token == NULL) {
+            char *region_code_token = strtok(csv_line, ",");
+            if (region_code_token == NULL) {
                 fprintf(stderr, "Line %lu is empty\n", line_counter);
                 continue;
             }
-            printf("%s, ", extension_token);
+            printf("%s, ", region_code_token);
             
             char *region_token = strtok(NULL, ",");
             if (region_token == NULL) {
@@ -138,14 +138,19 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
                 continue;
             }
 
-            extension_token = validate_extension(&extension_token);
+            region_code_token = validate_region_code(&region_code_token);
             //double rate = validate_rate(rate_token);   
             
-            if ((extension_token != NULL) && rate_token) {
-                // At this point, the node is ready for creation
-                append_rate(&head, &tail, extension_token, /**** placeholder value ****/ 1.0);
+            if ((region_code_token != NULL) && rate_token) {
+                
+                /*********************************************************
+                * The necesarry data has been collected, create the node *
+                *********************************************************/
+                
+                append_rate(&head, &tail, region_code_token, /**** placeholder value ****/ 1.0);
+
             } else {
-                printf("Invalid extension or rate found on line %lu\n", line_counter);
+                printf("Invalid region_code or rate found on line %lu\n", line_counter);
                 continue;
             }
             
@@ -161,40 +166,40 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
 }
 
 /**
- *      Validate extension
+ *      Validate region_code
  * 
- *      @brief Checks if a given extension is legal in E.164 and formats it by removing leading zeros, if need be.
+ *      @brief Checks if a given region_code is legal in E.164 and formats it by removing leading zeros, if need be.
  * 
- *      @param extension A double pointer to the extension. May be altered.
+ *      @param region_code A double pointer to the region_code. May be altered.
  *  
- *      @return A pointer to the valid extension or NULL
+ *      @return A pointer to the valid region_code or NULL
  */
-char *validate_extension(char **extension){
-    if (*extension == NULL) {
+char *validate_region_code(char **region_code){
+    if (*region_code == NULL) {
         fprintf(stderr, "Cannot validate NULL string\n");
         return NULL;
     }
     
     // Remove leading zeros
-    while (**extension == '0') {
-        *extension = (*extension) + 1;
+    while (**region_code == '0') {
+        *region_code = (*region_code) + 1;
     }
     
-    size_t extension_len = strlen(*extension);
+    size_t region_code_len = strlen(*region_code);
 
-    if (extension_len > 11) {
-        // Extension too long, invalid
+    if (region_code_len > 11) {
+        // region_code too long, invalid
         return NULL;
     }
     
 
-    // Initialize the legality flag as zero to exclude extensions that don't enter the loop at all (len = 0)
+    // Initialize the legality flag as zero to exclude region_codes that don't enter the loop at all (len = 0)
     unsigned short int legal = 0;
 
-    for (size_t i = 0; i < extension_len; i++) {
+    for (size_t i = 0; i < region_code_len; i++) {
         legal = 1;
 
-        if (!(isdigit((*extension)[i]))) {
+        if (!(isdigit((*region_code)[i]))) {
             legal = 0;
             break;
         }
@@ -203,7 +208,7 @@ char *validate_extension(char **extension){
     // There should be a procedure for comparing every string with every other string to avoid duplicates, this would be a slightly more resource friendly place for that
 
     if (legal) {
-        return *extension;
+        return *region_code;
     } else {
         return NULL;
     }
@@ -230,15 +235,15 @@ double validate_rate(char *rate){
  *      
  *      @param head A double pointer to the head of the list, which will be changed dynamically.
  *      @param tail A double pointer to the tail of the list, which will be changed dynamically.
- *      @param extension The extension string, cannot be NULL.
- *      @param rate The rate associated with the extension.
+ *      @param region_code The region_code string, cannot be NULL.
+ *      @param rate The rate associated with the region_code.
  * 
  *      @returns 1 if the function suceeds, 0 if it fails.
  */
-int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extension, double rate) {
+int append_rate(rate_linked_list **head, rate_linked_list **tail, char *region_code, double rate) {
 
-    if (extension == NULL) {
-        fprintf(stderr, "Extension string empty, aborting\n");
+    if (region_code == NULL) {
+        fprintf(stderr, "region_code string empty, aborting\n");
         return 0;
     } else if (!(*head == NULL) && ((*tail)->next) != NULL) {
         fprintf(stderr, "Head node is not last node, aborting\n");
@@ -251,13 +256,13 @@ int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extensio
         return 0;
     }
 
-    // Initialize extension
-    new_node->extension = malloc(sizeof(extension));
-    if (new_node->extension == NULL) {
-        fprintf(stderr, "Not enough memory to initialize extension\n");
+    // Initialize region_code
+    new_node->region_code = malloc(sizeof(region_code));
+    if (new_node->region_code == NULL) {
+        fprintf(stderr, "Not enough memory to initialize region_code\n");
         return 0;
     } else {
-        strcpy(new_node->extension, extension);    
+        strcpy(new_node->region_code, region_code);    
     }
     
     new_node->rate = rate;
@@ -309,7 +314,7 @@ void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_inde
         // If no start and end indexes were given print the whole list
 
         while (current != NULL) {
-        printf("The rate for the extension \"%s\" equals %f.\n", current->extension, current->rate);
+        printf("The rate for the region_code \"%s\" equals %f.\n", current->region_code, current->rate);
         current = current->next;
         }    
     } else {
@@ -319,7 +324,7 @@ void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_inde
         while (current != NULL) {
             if (i >= start_index) {
                 // If we've reached the start index, print the node
-                printf("The rate for the extension \"%s\" equals %2f.\n", current->extension, current->rate);
+                printf("The rate for the region_code \"%s\" equals %2f.\n", current->region_code, current->rate);
             }
 
             if (i > end_index) {
@@ -352,8 +357,8 @@ int delete_rate_list(rate_linked_list **head) {
     while (*head != NULL) {
         current = *head;
 
-        free(current->extension);                       
-        current->extension = NULL;
+        free(current->region_code);                       
+        current->region_code = NULL;
 
         *head = (*head)->next;
         free(current);

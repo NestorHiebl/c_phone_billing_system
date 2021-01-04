@@ -3,15 +3,9 @@
  *      @author Nestor Hiebl
  *      @date December 23, 2020
  *      
- *      @brief The external function header for the csv based phone billing project. It saves the data in a double linked list with the following structure:
- * 
- *      user -> user -> user -> user -> user -> user -> user ->...
- *        |       |       |       |       |       |       | 
- *      call    call    call    call    call    call    call
- *        |       |       |       |       |       |       | 
- *      call    call    call    call    call    call    call
- *        |       |       |       |       |       |       | 
- *      call    call    call    call    call    call    call
+ *      @brief The external function header for the csv based phone billing project. It saves rate data in an AVL tree and user data in an
+ *      AVL tree where each node is the head of a linked list containing the respective user's call data. Data is collected by parsing two
+ *      csv files using @c fgets and @c strtok. Invalid or corrupt data is logged and discarded with no attempt at recovering it.
  * 
  *      https://github.com/NestorHiebl/c_phone_billing_system
  */
@@ -31,15 +25,15 @@
          *      @brief The call rate node. Only used to store rate information. The data inside this structure will not be changed after 
          *      being loaded in.
          * 
-         *      @param extension The number extension, formatted as a @c string to make longest match searches easier.
-         *      @param rate The call rate in @c double format. Determines the cost of a call to the extension per minute.
+         *      @param region_code The number region code, formatted as a @c string to make longest match searches easier.
+         *      @param rate The call rate in @c double format. Determines the cost of a call to the region code per minute.
          * 
          *      @param previous The previous node. @c NULL for the head node.
          *      @param next The next node. @c NULL for the tail node.      
          */
         typedef struct rate_linked_list {
             
-            char *extension;
+            char *region_code;
             double rate;
 
             struct rate_linked_list *previous;
@@ -106,6 +100,18 @@
             struct user_list *next;
 
         } user_list;
+
+        typedef struct tree_node {
+            char *region_code;
+            double rate;
+
+            int height;
+
+            struct tree_node *parent;
+            struct tree_node *left;
+            struct tree_node *reight;
+        } tree_node;
+        
         
         // Functions for file handling
 
@@ -120,7 +126,7 @@
         // Pattern checking functions
 
         char *validate_phone_number(char *phone_number);
-        char *validate_extension(char **extension);
+        char *validate_region_code(char **region_code);
         double validate_rate(char *rate);
 
         char *censor_calee_numer(char *callee_number);
@@ -128,11 +134,11 @@
 
         // Rate linked list functions
 
-        int append_rate(rate_linked_list **head, rate_linked_list **tail, char *extension, double rate);
+        int append_rate(rate_linked_list **head, rate_linked_list **tail, char *region_code, double rate);
         void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_index);
         int delete_rate_list(rate_linked_list **head);
 
-        rate_linked_list *search_by_longest_extension_match(rate_linked_list *head, const char *exension);
+        rate_linked_list *search_by_longest_region_code_match(rate_linked_list *head, const char *exension);
 
         // User linked list functions
         
@@ -146,5 +152,16 @@
 
         int generate_monthly_bill_files(user_list *bill);
         int generate_monthly_cdr_files(user_list *bill);
+
+        // AVL Tree functions
+
+        void add_node(tree_node **root, tree_node *node);
+        tree_node *make_node(const char *number, double rate);
+        void rebalance(tree_node **root, tree_node *node);
+        void left_left_r(tree_node **root, tree_node *node);
+        void left_right_r(tree_node **root, tree_node *node);
+        void right_right_r(tree_node **root, tree_node *node);
+        void right_left_r(tree_node **root, tree_node *node);
+        
 
 #endif
