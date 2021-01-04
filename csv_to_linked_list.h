@@ -121,7 +121,6 @@
 
         } user_node;
         
-        
         // Functions for file handling
 
         FILE *open_csv(const char* filename);
