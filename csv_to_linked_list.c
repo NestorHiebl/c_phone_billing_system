@@ -368,72 +368,65 @@ int delete_rate_list(rate_linked_list **head) {
     return 1;
 }
 
-/*****************************************************************************************************************
- * USER LINKED LIST FUNCTIONS                                                                                    *
- *****************************************************************************************************************/
-
-/**
- *      Appent user node
- * 
- *      @brief Appends a new node to the user linked list. If the head argument is NULL, it initializes a list instead.
- *      Total call duration, number and price are initialized at 0. Call list head is initialized as NULL.
- *      
- *      @param head A double pointer to the head of the list, which will be changed dynamically.
- *      @param tail A double pointer to the tail of the list, which will be changed dynamically.
- *      @param number The users number, which will be used as their sole identifier.
- * 
- *      @returns 1 if the function suceeds, 0 if it fails.
- */
-int append_user(user_list **head, user_list **tail, char *number) {
-
-    if (number == NULL) {
-        fprintf(stderr, "Number string empty, aborting\n");
-        return 0;
-    } else if (!(*head == NULL) && ((*tail)->next) != NULL) {
-        fprintf(stderr, "Head node is not last node, aborting\n");
-        return 0;
-    }
-    
-    user_list *new_node = malloc(sizeof(user_list));
-    if (new_node == NULL) {
-        fprintf(stderr, "Not enough memory to create new user node\n");
-        return 0;
-    }
-
-    // Initialize number
-    new_node->number = malloc(sizeof(number));
-    if (new_node->number == NULL) {
-        fprintf(stderr, "Not enough memory to initialize number\n");
-        return 0;
-    } else {
-        strcpy(new_node->number, number);    
-    }
-    
-    new_node->total_bill = 0;
-    new_node->total_call_duration = 0;
-    new_node->total_call_number = 0;
-
-    new_node->call_list_head = NULL;
-    
-    if (*head == NULL) {
-        // The list is being initialized
-
-        new_node->previous = NULL;
-        new_node->next = NULL;
-
-        *head = new_node;
-        *tail = new_node;
-    } else {
-        // The node is being appended to an existing list
-        (*tail)->next = new_node;
-
-        new_node->previous = *tail;
-        new_node->next = NULL;
-
-        *tail = new_node;
-    }
-    
-    return 1;    
-}
 
 // Note - The User list deletition function needs to be nested, because each node contains its own linked list.
+
+/*****************************************************************************************************************
+ * AVL TREE FUNCTIONS                                                                                            *
+ ****************************************************************************************************************/
+
+// Note - will probably need the add_node function to return the new subtree root for recursion's sake
+
+rate_node *add_rate_node(rate_node *node, const char *region_code, double rate) {
+    if (region_code == NULL) {
+        fprintf(stderr, "Number string empty, aborting\n");
+        return;
+    }
+
+    if (node == NULL){
+        return make_rate_node(region_code, rate);
+    }
+
+
+   
+    
+    
+    
+}
+
+
+
+rate_node *make_rate_node(const char *region_code, double rate) {
+    if (region_code == NULL) {
+        fprintf(stderr, "Number string empty, aborting\n");
+        return;
+    }
+
+    rate_node *newNode = malloc(sizeof(rate_node));
+    if (newNode == NULL) {
+        fprintf(stderr, "Not enough memory to create new rate node, aborting\n");
+        return NULL;
+    }
+    
+    newNode->region_code = malloc(sizeof(region_code));
+    if (newNode->region_code == NULL) {
+        fprintf(stderr, "Not enough memory to initialize region code field, aborting\n");
+        free(newNode);
+        newNode = NULL;
+        return NULL;
+    } else {
+        strcpy(newNode->region_code, region_code);
+    }
+    
+
+
+    newNode->rate = rate;
+
+    newNode->height = 1;
+
+    newNode->parent = NULL;
+    newNode->left = NULL;
+    newNode->right = NULL;
+
+    return newNode;
+}

@@ -70,11 +70,25 @@
 
         } user_call_list;
 
+
+
+
+        typedef struct rate_node {
+
+            char *region_code;
+            double rate;
+
+            int height;
+
+            struct rate_node *parent;
+            struct rate_node *left;
+            struct rate_node *right;
+        } rate_node;
+
         /**
-         *      @typedef User list node
+         *      @typedef User tree node
          * 
-         *      @brief The user node. It contains the head of another linked list with all of the respective user's calls.
-         *      The rest of the node's fields are populated based on this list.
+         *      @brief The user node. It contains the head of a linked list with all of the respective user's calls.
          * 
          *      @param number The user's unique number in @c string format. Used as the sole identifier for the user.
          *      @param call_list_head The head of the user's full list of calls.
@@ -83,10 +97,13 @@
          *      @param total_call_duration Total duration the user's calls. Only used for final stat calculation.
          *      @param total_bill The user's total phone bill. Only used for final stat calculation.
          * 
-         *      @param previous The previous node. @c NULL for the head node.
-         *      @param next The next node. @c NULL for the tail node.    
+         *      @param height The height of the node. Used to calculate balance, updated automatically by the rebalance function.
+         * 
+         *      @param parent The parent node. @c NULL for the root node.
+         *      @param left The left child node.
+         *      @param right The right child node.    
          */
-        typedef struct user_list {
+        typedef struct user_node {
             
             char *number;
 
@@ -96,21 +113,13 @@
             size_t total_call_duration;
             double total_bill;
 
-            struct user_list *previous;
-            struct user_list *next;
-
-        } user_list;
-
-        typedef struct tree_node {
-            char *region_code;
-            double rate;
-
             int height;
 
-            struct tree_node *parent;
-            struct tree_node *left;
-            struct tree_node *reight;
-        } tree_node;
+            struct user_node *parent;
+            struct user_node *left;
+            struct user_node *right;
+
+        } user_node;
         
         
         // Functions for file handling
@@ -121,7 +130,7 @@
         rate_linked_list *parse_rate_csv(FILE *filename);
 
         rate_linked_list *initialize_node_from_row();
-        user_list *parse_call_csv(FILE *filename);
+        user_node *parse_call_csv(FILE *filename);
     
         // Pattern checking functions
 
@@ -132,7 +141,7 @@
         char *censor_calee_numer(char *callee_number);
 
 
-        // Rate linked list functions
+        // Rate linked list functions - marked for removal as soon as the AVL functionality is up and running
 
         int append_rate(rate_linked_list **head, rate_linked_list **tail, char *region_code, double rate);
         void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_index);
@@ -140,28 +149,31 @@
 
         rate_linked_list *search_by_longest_region_code_match(rate_linked_list *head, const char *exension);
 
-        // User linked list functions
+        // Rate AVL Tree functions
+
+        rate_node * add_rade_node(rate_node **root, const char *region_code, double rate);
+        rate_node *make_rate_node(const char *region_code, double rate);
+        void rebalance_rates(rate_node **root, rate_node *node);
+        void left_left_rate(rate_node **root, rate_node *node);
+        void left_right_rate(rate_node **root, rate_node *node);
+        void right_right_rate(rate_node **root, rate_node *node);
+        void right_left_rate(rate_node **root, rate_node *node);
         
-        int append_user(user_list **head, user_list **tail, char *number);
-        void print_user_list(user_list *head, size_t start_index, size_t end_index);
-        int delete_user_list(user_list **head);
+        // User AVL Tree functions
 
-        int add_user_call(user_list *user, const char *callee, size_t duration, double price, size_t year, size_t month);
+        void add_user_node(user_node **root, const char *number);
+        user_node *make_user_node(const char *number);
+        void rebalance_users(user_node **root, user_node *node);
+        void left_left_user(user_node **root, user_node *node);
+        void left_right_user(user_node **root, user_node *node);
+        void right_right_user(user_node **root, user_node *node);
+        void right_left_user(user_node **root, user_node *node);
 
-        int calculate_user_stats(user_list *user);
+        int add_user_call(user_node *user, const char *callee, size_t duration, double price, size_t year, size_t month);
+        int calculate_user_stats(user_node *user);
+        int generate_monthly_bill_files(user_node *bill);
+        int generate_monthly_cdr_files(user_node *bill);
 
-        int generate_monthly_bill_files(user_list *bill);
-        int generate_monthly_cdr_files(user_list *bill);
-
-        // AVL Tree functions
-
-        void add_node(tree_node **root, tree_node *node);
-        tree_node *make_node(const char *number, double rate);
-        void rebalance(tree_node **root, tree_node *node);
-        void left_left_r(tree_node **root, tree_node *node);
-        void left_right_r(tree_node **root, tree_node *node);
-        void right_right_r(tree_node **root, tree_node *node);
-        void right_left_r(tree_node **root, tree_node *node);
-        
+        int delete_user_tree(user_node **head);
 
 #endif
