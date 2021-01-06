@@ -20,8 +20,7 @@
  * 
  *      @param filename The filename of the csv file.
  * 
- *      @returns The file pointer to given file.
- *      @retval NULL If the file is not found or if handling has failed 
+ *      @returns The file pointer to given file, or NULL if the file is not found or handling has failed.
  */
 FILE *open_csv(const char* filename){
     size_t filename_len = strlen(filename);
@@ -68,6 +67,100 @@ int close_csv(FILE *filepointer) {
     return 1;
 }
 
+
+user_node *parse_call_csv(FILE *filename) {
+
+    char csv_line[1024];
+
+    user_node *root = NULL;
+
+    // Used for debugging
+    size_t line_counter = 1;
+    while (!(feof(filename))) {
+        if ((fgets(csv_line, 1024, filename)) != NULL) {
+            
+            // Going smoothly, the line has been loaded in successfuly
+
+            if (((csv_line[strlen(csv_line) - 1]) == '\n')) {
+
+                // Remove the trailing newline from the csv row
+                printf("Call line ended\n");
+                csv_line[strlen(csv_line) - 1] = '\0';
+                
+            } else if (feof(filename)) {
+                // We've reached the end of the file
+                printf("Call file ended\n");    
+            } else {
+                // We're dealing with a really long line
+                printf("Call line longer than 1024 characters\n");
+                line_counter++;
+                continue;
+            } 
+                
+            char *caller_number_token = strtok(csv_line, ","); //unsafe?
+            if (caller_number_token == NULL) {
+                fprintf(stderr, "Call line %lu is empty\n", line_counter);
+                line_counter++;
+                continue;
+            }
+
+            char *callee_number_token = strtok(csv_line, ","); //unsafe?
+            if (callee_number_token == NULL) {
+                fprintf(stderr, "Call line %lu is missing three arguments\n", line_counter);
+                line_counter++;
+                continue;
+            }
+            
+            char *duration_token = strtok(NULL, ",");
+            if (duration_token == NULL) {
+                fprintf(stderr, "Call line %lu is missing two arguments\n", line_counter);
+                line_counter++;
+                continue;
+            }
+
+            char *datetime_token = strtok(NULL, ",");
+            if (datetime_token == NULL) {
+                fprintf(stderr, "Call line %lu is missing one argument\n", line_counter);
+                line_counter++;
+                continue;
+            }
+            
+            
+            if (strtok(NULL, ",") != NULL) {
+                fprintf(stderr, "Additional field found on call line %lu\n", line_counter);
+                line_counter++;
+                continue;
+            }
+
+            caller_number_token = validate_phone_number(&caller_number_token);
+            callee_number_token = validate_phone_number(&callee_number_token);
+            
+            
+            if ((caller_number_token != NULL) && (callee_number_token != NULL)) {
+                
+                /*********************************************************
+                * The necesarry data has been collected, create the node *
+                *********************************************************/
+                
+                // Add user node
+
+            } else {
+                printf("Invalid region_code found on call line %lu\n", line_counter);
+                line_counter++;
+                continue;
+            }
+            
+        } else {
+            // Couldn't load a line in
+            fprintf(stderr, "Loading line %lu in csv call file failed, aborting\n", line_counter);
+            return root;    
+        }
+        line_counter++;
+    }
+    return root;
+}
+
+
 /**
  *      Parse rate csv
  * 
@@ -81,17 +174,14 @@ int close_csv(FILE *filepointer) {
  * 
  *      @returns A pointer to the head of the generated linked list. Note that no tail is provided.
  */
-rate_linked_list *parse_rate_csv(FILE *filename) {
-    
-    // rate_linked_list *head = NULL;
+rate_node *parse_rate_csv(FILE *filename) {
 
     char csv_line[1024];
 
-    rate_linked_list *head = NULL;
-    rate_linked_list *tail = NULL;
+    rate_node *root = NULL;
 
     // Used for debugging
-    size_t line_counter = 0;
+    size_t line_counter = 1;
     while (!(feof(filename))) {
         if ((fgets(csv_line, 1024, filename)) != NULL) {
             
@@ -109,70 +199,127 @@ rate_linked_list *parse_rate_csv(FILE *filename) {
             } else {
                 // We're dealing with a really long line
                 printf("Line longer than 1024 characters\n");
-                continue;  
+                line_counter++;
+                continue;
             } 
                 
-            char *region_code_token = strtok(csv_line, ",");
+            char *region_code_token = strtok(csv_line, ","); //unsafe?
             if (region_code_token == NULL) {
                 fprintf(stderr, "Line %lu is empty\n", line_counter);
+                line_counter++;
                 continue;
             }
-            printf("%s, ", region_code_token);
             
             char *region_token = strtok(NULL, ",");
             if (region_token == NULL) {
                 fprintf(stderr, "Line %lu is missing two arguments\n", line_counter);
+                line_counter++;
                 continue;
             }
-            printf("%s, ", region_token);
 
             char *rate_token = strtok(NULL, ",");
             if (rate_token == NULL) {
                 fprintf(stderr, "Line %lu is missing one argument\n", line_counter);
+                line_counter++;
                 continue;
             }
-            printf("%s ", rate_token);
+
+            rate_token = validate_rate(rate_token);
+            if (rate_token == NULL) {
+                fprintf(stderr, "Invalid rate found on line %lu\n", line_counter);
+                line_counter++;
+                continue;
+            }
+            
+            double rate_token_d = strtod(rate_token, NULL);
             
             if (strtok(NULL, ",") != NULL) {
                 fprintf(stderr, "Additional field found on line %lu\n", line_counter);
+                line_counter++;
                 continue;
             }
 
             region_code_token = validate_region_code(&region_code_token);
-            //double rate = validate_rate(rate_token);   
+            //double rate = validate_rate(rate_token);
             
-            if ((region_code_token != NULL) && rate_token) {
+            if (region_code_token != NULL) {
                 
                 /*********************************************************
                 * The necesarry data has been collected, create the node *
                 *********************************************************/
                 
-                append_rate(&head, &tail, region_code_token, /**** placeholder value ****/ 1.0);
+                root = add_rate_node(root, region_code_token, rate_token_d);
 
             } else {
-                printf("Invalid region_code or rate found on line %lu\n", line_counter);
+                printf("Invalid region_code found on line %lu\n", line_counter);
+                line_counter++;
                 continue;
             }
             
-
         } else {
             // Couldn't load a line in
             fprintf(stderr, "Loading line %lu in csv file failed, aborting\n", line_counter);
-            return head;    
+            return root;    
         }
         line_counter++;
     }
-    return head;
+    return root;
 }
+
+
+
+
+
+// TODO
+
+char *validate_phone_number(char **phone_number) {
+    if (*phone_number == NULL) {
+        fprintf(stderr, "Cannot validate NULL string\n");
+        return NULL;
+    }
+    
+    while (**phone_number == '0') {
+        *phone_number = (*phone_number) + 1;
+    }
+
+    size_t phone_number_len = strlen(*phone_number);
+
+    if (phone_number_len > 15 /****************** need actual value **********************/) {
+        fprintf(stderr, "Phone number too long, aborting\n");
+        return NULL;
+    }
+
+    // Initialize the legality flag as zero to exclude region_codes that don't enter the loop at all (len = 0)
+    _Bool legal = 0;
+
+    for (size_t i = 0; i < phone_number_len; i++) {
+        legal = 1;
+
+        if (!(isdigit((*phone_number)[i]))) {
+            legal = 0;
+            break;
+        }
+    }
+
+    return legal ? *phone_number : NULL;    
+}
+
+
+
+
+
+
+
+
 
 /**
  *      Validate region_code
  * 
- *      @brief Checks if a given region_code is legal in E.164 and formats it by removing leading zeros, if need be.
+ *      @brief Checks if a given region code is legal in E.164 and formats it by removing leading zeros, if need be.
  * 
- *      @param region_code A double pointer to the region_code. May be altered.
+ *      @param region_code A double pointer to the region code. May be altered.
  *  
- *      @return A pointer to the valid region_code or NULL
+ *      @return A pointer to the valid region code or NULL
  */
 char *validate_region_code(char **region_code){
     if (*region_code == NULL) {
@@ -181,7 +328,7 @@ char *validate_region_code(char **region_code){
     }
     
     // Remove leading zeros
-    while (**region_code == '0') {
+    while ((**region_code == '0') || (**region_code == '+')) {
         *region_code = (*region_code) + 1;
     }
     
@@ -192,9 +339,8 @@ char *validate_region_code(char **region_code){
         return NULL;
     }
     
-
     // Initialize the legality flag as zero to exclude region_codes that don't enter the loop at all (len = 0)
-    unsigned short int legal = 0;
+    _Bool legal = 0;
 
     for (size_t i = 0; i < region_code_len; i++) {
         legal = 1;
@@ -204,24 +350,28 @@ char *validate_region_code(char **region_code){
             break;
         }
     }
-    
-    // There should be a procedure for comparing every string with every other string to avoid duplicates, this would be a slightly more resource friendly place for that
 
-    if (legal) {
-        return *region_code;
-    } else {
-        return NULL;
-    }
-    
-    
-    
-
+    return legal ? *region_code : NULL;
 }
 
+/**
+ *      Validate rate
+ *      @brief Checks if a string contains a valid call rate. Note that a string of dots will confuse the algorithm
+ *      
+ *      @param rate The rate to be checked.
+ *      @returns The unchanged rate string if valid, otherwise NULL.
+ */
+char *validate_rate(char *rate){
+    if (rate == NULL) return NULL;
 
-double validate_rate(char *rate){
-    printf("%s\n", rate);
-    return 0.0;
+    size_t i = 0;
+    while (*(rate + i) != '\0') {
+        if (!(isdigit(*(rate + i))) && (*(rate + i) != '.')) {
+            return NULL;
+        }
+        i++;
+    }
+    return rate;    
 }
 
 /*****************************************************************************************************************
@@ -399,15 +549,13 @@ rate_node *add_rate_node(rate_node *node, const char *region_code, double rate) 
 
     if (strcmp(region_code, node->region_code) < 0) {
         // Going left
-        printf("New node code smaller than current, going left\n");
         node->left = add_rate_node(node->left, region_code, rate);
     } else if (strcmp(region_code, node->region_code) > 0) {
         // Going right
-        printf("New node code larger than current, going right\n");
         node->right = add_rate_node(node->right, region_code, rate);
     } else {
         // This should not happen
-        fprintf(stderr, "Error: region code already found in tree\n");
+        fprintf(stderr, "Error: region code \"%s\" already found in tree\n", region_code);
         return node;
     }
     
@@ -480,7 +628,6 @@ rate_node *make_rate_node(const char *region_code, double rate) {
     newNode->left = NULL;
     newNode->right = NULL;
 
-    printf("Created new tree node!\n");
     return newNode;
 }
 

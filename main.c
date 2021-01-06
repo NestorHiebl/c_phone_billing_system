@@ -59,35 +59,19 @@ int main(int argc, char **argv){
     }
     // Line 509842 in the csv has a great error example!
 
-    rate_linked_list * rate_head = parse_rate_csv(call_rates);
-    print_rate_list(rate_head, 0, 0);
+    rate_node *rate_root = parse_rate_csv(call_rates);
+    traverse_rates_inorder(rate_root, print_rate_node);
 
     close_csv(call_rates);
     close_csv(call_record);
+
+    traverse_rates_postorder(rate_root, delete_rate_node);
+    rate_root = NULL;
 
     #ifdef DEBUG
 
         printf("%li, %li, %f\n", total_call_number, total_call_duration, total_call_price);
 
-        // Test for the rate linked list append, print and delete functions
-        rate_linked_list *head = NULL;
-        rate_linked_list *tail = NULL;
-
-        append_rate(&head, &tail, "000", 0.5);
-        append_rate(&head, &tail, "001", 0.5);
-        append_rate(&head, &tail, "002", 0.5);
-        append_rate(&head, &tail, "003", 0.5);
-        append_rate(&head, &tail, "004", 0.5);
-        append_rate(&head, &tail, "005", 0.5);
-        append_rate(&head, &tail, "006", 0.5);
-
-        print_rate_list(head, 0, 0);
-
-        if (delete_rate_list(&head)) {
-            printf("Success!\n");
-        } else {
-            printf("Failure!\n");
-        }
         
         // print_rate_list(head, 0, 0);
 

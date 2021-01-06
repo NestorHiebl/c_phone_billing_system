@@ -136,16 +136,14 @@
         FILE *open_csv(const char* filename);
         int close_csv(FILE *filepointer);
 
-        rate_linked_list *parse_rate_csv(FILE *filename);
-
-        rate_linked_list *initialize_node_from_row();
+        rate_node *parse_rate_csv(FILE *filename);
         user_node *parse_call_csv(FILE *filename);
     
         // Pattern checking functions
 
-        char *validate_phone_number(char *phone_number);
+        char *validate_phone_number(char **phone_number);
         char *validate_region_code(char **region_code);
-        double validate_rate(char *rate);
+        char *validate_rate(char *rate);
 
         char *censor_calee_numer(char *callee_number);
 
@@ -177,7 +175,7 @@
         
         // User AVL Tree functions
 
-        user_node *add_user_node(user_node *root, const char *number);
+        user_node *add_user_node(user_node *root, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month);
         user_node *make_user_node(const char *number);
         
         int get_user_node_height(user_node *node);
