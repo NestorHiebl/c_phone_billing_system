@@ -14,12 +14,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
-#include "csv_to_linked_list.h"
+#include "csv_to_avl_tree.h"
 
 /**
  *      @def Debug
  * 
- *      @brief initialize to start to program in debugging mode. 
+ *      @brief initialize to start the program in debugging mode. 
  */
 #define DEBUG
 
@@ -94,10 +94,10 @@ int main(int argc, char **argv){
         rate_node *rate_tree_root = NULL;
 
         rate_tree_root = add_rate_node(rate_tree_root, "01", 0.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "02", 0.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "05", 0.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "04", 0.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "03", 0.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "02", 5.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "05", 5.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "04", 5.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "03", 5.0);
         rate_tree_root = add_rate_node(rate_tree_root, "06", 0.0);
         rate_tree_root = add_rate_node(rate_tree_root, "07", 0.0);
         rate_tree_root = add_rate_node(rate_tree_root, "13", 0.0);
@@ -105,6 +105,8 @@ int main(int argc, char **argv){
 
         traverse_rates_inorder(rate_tree_root, print_rate_node);
 
+        traverse_rates_postorder(rate_tree_root, delete_rate_node);
+        rate_tree_root = NULL;
     #endif
 
 

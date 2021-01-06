@@ -1,11 +1,11 @@
 /**
- *      @headerfile csv_to_linked_list.h ""
+ *      @headerfile csv_to_avl_tree.h ""
  *      @author Nestor Hiebl
  *      @date December 23, 2020
  *      
  *      @brief The external function header for the csv based phone billing project. It saves rate data in an AVL tree and user data in an
  *      AVL tree where each node is the head of a linked list containing the respective user's call data. Data is collected by parsing two
- *      csv files using @c fgets and @c strtok. Invalid or corrupt data is logged and discarded with no attempt at recovering it.
+ *      csv files using @c fgets and @c strtok. Invalid or corrupt data is logged and discarded with no attempt at recovery.
  * 
  *      https://github.com/NestorHiebl/c_phone_billing_system
  */
@@ -15,9 +15,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifndef CSV_TO_LINKED_LIST_FUNC
-
-    #define CSV_TO_LINKED_LIST_FUNC
+#ifndef CSV_TO_AVL_TREE_FUNC
+    #define CSV_TO_AVL_TREE_FUNC
 
         /**
          *      @typedef Rate linked list
@@ -72,7 +71,19 @@
 
 
 
-
+        /**
+         *      @typedef Rate tree node
+         * 
+         *      @brief The call rate tree node. Used to store rate information. The data inside this structure will not be changed after 
+         *      being loaded in. Note that there is no reference to the parent node because the tree is static after the data has been
+         *      loaded in. No deletitions or other complex operations will take place.
+         * 
+         *      @param region_code The number region code, formatted as a @c string to make longest match searches easier.
+         *      @param rate The call rate in @c double format. Determines the cost of a call to the region code per minute.
+         * 
+         *      @param left The left child node.
+         *      @param next The right child node.      
+         */
         typedef struct rate_node {
 
             char *region_code;
@@ -80,7 +91,6 @@
 
             int height;
 
-            struct rate_node *parent;
             struct rate_node *left;
             struct rate_node *right;
         } rate_node;
@@ -153,30 +163,37 @@
 
         rate_node *add_rate_node(rate_node *node, const char *region_code, double rate);
         rate_node *make_rate_node(const char *region_code, double rate);
-        
+
+        int get_rate_node_height(rate_node *node);
+        int get_rate_node_balance(rate_node *node);
+
         rate_node *left_rotate_rate(rate_node *node);
         rate_node *right_rotate_rate(rate_node *node);
 
         void traverse_rates_inorder(rate_node *node, void (*visit) (rate_node*));
-
+        void traverse_rates_postorder(rate_node *node, void (*visit) (rate_node*));
         void print_rate_node(rate_node *node);
-
-        int get_rate_node_height(rate_node *node);
-        int get_rate_node_balance(rate_node *node);
+        void delete_rate_node(rate_node *node);
         
         // User AVL Tree functions
 
-        void add_user_node(user_node **root, const char *number);
+        user_node *add_user_node(user_node *root, const char *number);
         user_node *make_user_node(const char *number);
-        void rebalance_users(user_node **root, user_node *node);
-        void left_rotate_user(user_node **root, user_node *node);
-        void right_rotate_user(user_node **root, user_node *node);
+        
+        int get_user_node_height(user_node *node);
+        int get_user_node_balance(user_node *node);
+
+        void left_rotate_user(user_node *node);
+        void right_rotate_user(user_node *node);
 
         int add_user_call(user_node *user, const char *callee, size_t duration, double price, size_t year, size_t month);
-        int calculate_user_stats(user_node *user);
-        int generate_monthly_bill_files(user_node *bill);
-        int generate_monthly_cdr_files(user_node *bill);
 
-        int delete_user_tree(user_node **head);
+        void traverse_users_inorder(user_node *node, void (*visit) (user_node*));
+        void traverse_users_postorder(user_node *node, void (*visit) (user_node*));
+        void print_user_node(user_node *node);
+        void delete_user_node(user_node *node);
+        void calculate_user_stats(user_node *user);
+        void generate_monthly_bill_files(user_node *bill);
+        void generate_monthly_cdr_files(user_node *bill);
 
 #endif

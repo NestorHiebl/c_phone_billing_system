@@ -1,5 +1,5 @@
 /**
- *      @file csv_to_linked_list.c
+ *      @file csv_to_avl_tree.c
  *      @author Nestor Hiebl
  *      @date December 23, 2020
  *      
@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "csv_to_linked_list.h"
+#include "csv_to_avl_tree.h"
 #include <ctype.h>
 
 /**
@@ -375,6 +375,18 @@ int delete_rate_list(rate_linked_list **head) {
  * AVL TREE FUNCTIONS                                                                                            *
  ****************************************************************************************************************/
 
+/**
+ *      Insert rate tree node
+ * 
+ *      @brief Recursively inserts a new rate node to the rate AVL tree. The tree is automatically rebalanced in the process.
+ *      Interfacing with the rate AVL tree should only be done through this function and the traversals.
+ *      
+ *      @param node A pointer to the tree root. May change due to rebalancing.
+ *      @param region_code The region_code string, cannot be NULL.
+ *      @param rate The rate associated with the region_code.
+ * 
+ *      @returns The tree's new root.
+ */
 rate_node *add_rate_node(rate_node *node, const char *region_code, double rate) {
     if (region_code == NULL) {
         fprintf(stderr, "Number string empty, aborting\n");
@@ -431,8 +443,14 @@ rate_node *add_rate_node(rate_node *node, const char *region_code, double rate) 
     return node;    
 }
 
-
-
+/**
+ *      Make rate node
+ *      @brief Initializes a new rate node and returns a pointer to it. Is called internally by @c add_rate_node.
+ *      
+ *      @param region_code The region_code string, cannot be NULL.
+ *      @param rate The rate associated with the region_code.
+ *      @returns A pointer to the new rate node, or NULL if there was an error.
+ */
 rate_node *make_rate_node(const char *region_code, double rate) {
     if (region_code == NULL) {
         fprintf(stderr, "Number string empty, aborting\n");
@@ -459,7 +477,6 @@ rate_node *make_rate_node(const char *region_code, double rate) {
 
     newNode->height = 1;
 
-    newNode->parent = NULL;
     newNode->left = NULL;
     newNode->right = NULL;
 
@@ -467,38 +484,59 @@ rate_node *make_rate_node(const char *region_code, double rate) {
     return newNode;
 }
 
-    rate_node *right_rotate_rate(rate_node *node) {
-        rate_node *leftChild = node->left;
-        rate_node * leftChildRight = leftChild->right;
+/**
+ *      Right rotate rate node
+ *      @brief Performs a right rotation around a given node's left child. Should only be called by the @c add_rate_node function.
+ *      
+ *      @param node The node to be right rotated
+ *      @returns The passed node's left child, which is the new subtree root.
+ */
+rate_node *right_rotate_rate(rate_node *node) {
+    rate_node *leftChild = node->left;
+    rate_node * leftChildRight = leftChild->right;
 
-        // Rotate around left child
-        leftChild->right = node;
-        node->left = leftChildRight;
+    // Rotate around left child
+    leftChild->right = node;
+    node->left = leftChildRight;
+
+    // Update heights
+    node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
+    leftChild->height = 1 + max(get_rate_node_height(leftChild->left), get_rate_node_height(leftChild->right));
+
+    // The left child is now the subtree root
+    return leftChild;
+}
+
+/**
+ *      Left rotate rate node
+ *      @brief Performs a left rotation around a given node's right child. Should only be called by the @c add_rate_node function.
+ *      
+ *      @param node The node to be left rotated
+ *      @returns The passed node's right child, which is the new subtree root.
+ */
+rate_node *left_rotate_rate(rate_node *node) {
+        rate_node *rightChild = node->right;
+        rate_node * rightChildLeft = rightChild->left;
+
+        // Rotate around right child
+        rightChild->left = node;
+        node->right = rightChildLeft;
 
         // Update heights
         node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
-        leftChild->height = 1 + max(get_rate_node_height(leftChild->left), get_rate_node_height(leftChild->right));
+        rightChild->height = 1 + max(get_rate_node_height(rightChild->left), get_rate_node_height(rightChild->right));
 
-        // The left child is now the subtree root
-        return leftChild;
-    }
-    
-    rate_node *left_rotate_rate(rate_node *node) {
-            rate_node *rightChild = node->right;
-            rate_node * rightChildLeft = rightChild->left;
+        // The right child is now the subtree root
+        return rightChild;
+}
 
-            // Rotate around right child
-            rightChild->left = node;
-            node->right = rightChildLeft;
-
-            // Update heights
-            node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
-            rightChild->height = 1 + max(get_rate_node_height(rightChild->left), get_rate_node_height(rightChild->right));
-
-            // The right child is now the subtree root
-            return rightChild;
-    }
-
+/**
+ *      Traverse rates inorder
+ *      @brief Traverses a given rate tree inorder. Useful for printing.
+ *      
+ *      @param node The root of the tree
+ *      @param visit The function to be performed upon visiting
+ */
 void traverse_rates_inorder(rate_node *node, void (*visit) (rate_node*)) {
     if (node == NULL) return;
 
@@ -507,6 +545,27 @@ void traverse_rates_inorder(rate_node *node, void (*visit) (rate_node*)) {
     traverse_rates_inorder(node->right, visit);
 }
 
+/**
+ *      Traverse rates postorder
+ *      @brief Traverses a given rate tree postorder. Useful for deletition.
+ *      
+ *      @param node The root of the tree
+ *      @param visit The function to be performed upon visiting
+ */
+void traverse_rates_postorder(rate_node *node, void (*visit) (rate_node*)) {
+    if (node == NULL) return;
+
+    traverse_rates_inorder(node->left, visit);
+    traverse_rates_inorder(node->right, visit);
+    visit(node);
+}
+
+/**
+ *      Print rate node
+ *      @brief Prints a single node in a rate AVL tree. Can be used for traversals.
+ *      
+ *      @param node The node to be printed
+ */
 void print_rate_node(rate_node *node) {
     if (node == NULL) {
         printf("Node is NULL\n");
@@ -516,6 +575,32 @@ void print_rate_node(rate_node *node) {
     return;
 }
 
+/**
+ *      Delete rate node
+ *      @brief Deletes a single node from a rate AVL tree. Can be used for (postorder) traversals.
+ *      
+ *      @param node The node to be deleted
+ */
+void delete_rate_node(rate_node *node) {
+    if (node == NULL) {
+        fprintf(stderr, "Cannot delete NULL node\n");
+        return;
+    }
+    free(node->region_code);
+    node->region_code = NULL;
+    node->left = NULL;
+    node->right = NULL;
+
+    free(node);
+}
+
+/**
+ *      Get rate node height
+ *      @brief Get the rate node height
+ *      
+ *      @param node The node whose height is to be checked
+ *      @returns @c 0 if the node is @c NULL, otherwise its height
+ */
 int get_rate_node_height(rate_node *node) {
     if (node == NULL) {
         return 0;
@@ -523,6 +608,13 @@ int get_rate_node_height(rate_node *node) {
     return node->height;    
 }
 
+/**
+ *      Get rate node balance
+ *      @brief Get the rate node balance
+ *      
+ *      @param node The node whose balance is to be checked
+ *      @returns @c 0 if the node is @c NULL, otherwise its balance
+ */
 int get_rate_node_balance(rate_node *node) {
     if (node == NULL) {
         return 0;
@@ -530,6 +622,14 @@ int get_rate_node_balance(rate_node *node) {
     return get_rate_node_height(node->left) - get_rate_node_height(node->right);    
 }
 
+/**
+ *      Max
+ *      @brief Checks which of two integers is greater
+ *      
+ *      @param a The first int to be compared
+ *      @param b The second int to be compared
+ *      @returns @c a if @c a is greater, @c b if @c b is equal or greater
+ */
 int max(int a, int b) {
     return (a > b) ? a : b;
 }
