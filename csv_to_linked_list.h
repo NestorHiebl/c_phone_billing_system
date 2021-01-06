@@ -139,6 +139,7 @@
 
         char *censor_calee_numer(char *callee_number);
 
+        int max(int a, int b);
 
         // Rate linked list functions - marked for removal as soon as the AVL functionality is up and running
 
@@ -150,23 +151,26 @@
 
         // Rate AVL Tree functions
 
-        rate_node * add_rade_node(rate_node **root, const char *region_code, double rate);
+        rate_node *add_rate_node(rate_node *node, const char *region_code, double rate);
         rate_node *make_rate_node(const char *region_code, double rate);
-        void rebalance_rates(rate_node **root, rate_node *node);
-        void left_left_rate(rate_node **root, rate_node *node);
-        void left_right_rate(rate_node **root, rate_node *node);
-        void right_right_rate(rate_node **root, rate_node *node);
-        void right_left_rate(rate_node **root, rate_node *node);
+        
+        rate_node *left_rotate_rate(rate_node *node);
+        rate_node *right_rotate_rate(rate_node *node);
+
+        void traverse_rates_inorder(rate_node *node, void (*visit) (rate_node*));
+
+        void print_rate_node(rate_node *node);
+
+        int get_rate_node_height(rate_node *node);
+        int get_rate_node_balance(rate_node *node);
         
         // User AVL Tree functions
 
         void add_user_node(user_node **root, const char *number);
         user_node *make_user_node(const char *number);
         void rebalance_users(user_node **root, user_node *node);
-        void left_left_user(user_node **root, user_node *node);
-        void left_right_user(user_node **root, user_node *node);
-        void right_right_user(user_node **root, user_node *node);
-        void right_left_user(user_node **root, user_node *node);
+        void left_rotate_user(user_node **root, user_node *node);
+        void right_rotate_user(user_node **root, user_node *node);
 
         int add_user_call(user_node *user, const char *callee, size_t duration, double price, size_t year, size_t month);
         int calculate_user_stats(user_node *user);

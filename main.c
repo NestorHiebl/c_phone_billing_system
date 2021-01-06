@@ -89,7 +89,21 @@ int main(int argc, char **argv){
             printf("Failure!\n");
         }
         
-        print_rate_list(head, 0, 0);
+        // print_rate_list(head, 0, 0);
+
+        rate_node *rate_tree_root = NULL;
+
+        rate_tree_root = add_rate_node(rate_tree_root, "01", 0.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "02", 0.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "05", 0.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "04", 0.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "03", 0.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "06", 0.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "07", 0.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "13", 0.0);
+        rate_tree_root = add_rate_node(rate_tree_root, "10", 0.0);
+
+        traverse_rates_inorder(rate_tree_root, print_rate_node);
 
     #endif
 

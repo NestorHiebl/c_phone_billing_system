@@ -375,23 +375,60 @@ int delete_rate_list(rate_linked_list **head) {
  * AVL TREE FUNCTIONS                                                                                            *
  ****************************************************************************************************************/
 
-// Note - will probably need the add_node function to return the new subtree root for recursion's sake
-
 rate_node *add_rate_node(rate_node *node, const char *region_code, double rate) {
     if (region_code == NULL) {
         fprintf(stderr, "Number string empty, aborting\n");
-        return;
+        return NULL;
     }
 
     if (node == NULL){
         return make_rate_node(region_code, rate);
     }
 
+    if (strcmp(region_code, node->region_code) < 0) {
+        // Going left
+        printf("New node code smaller than current, going left\n");
+        node->left = add_rate_node(node->left, region_code, rate);
+    } else if (strcmp(region_code, node->region_code) > 0) {
+        // Going right
+        printf("New node code larger than current, going right\n");
+        node->right = add_rate_node(node->right, region_code, rate);
+    } else {
+        // This should not happen
+        fprintf(stderr, "Error: region code already found in tree\n");
+        return node;
+    }
+    
+    // Update node height
+    node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
 
-   
+    // Get node balance    
+    int balance = get_rate_node_balance(node);
+
+    // Imbalance is in left child's left subtree
+    if ((balance > 1) && (strcmp(region_code, node->left->region_code) < 0)) {
+        return right_rotate_rate(node);
+    }
+
+    // Imbalance is in right child's right subtree
+    if ((balance < -1) && (strcmp(region_code, node->right->region_code) > 0)) {
+        return left_rotate_rate(node);
+    }
     
-    
-    
+    // Imbalance is in left child's right subtree
+    if ((balance > 1) && (strcmp(region_code, node->left->region_code) > 0)) {
+        node->left = left_rotate_rate(node->left);
+        return right_rotate_rate(node);
+    }
+
+    // Imbalance is in right child's left subtree
+    if ((balance < -1) && (strcmp(region_code, node->right->region_code) < 0)) {
+        node->right = right_rotate_rate(node->right);
+        return left_rotate_rate(node);
+    }
+
+    // Return the current node, unchanged
+    return node;    
 }
 
 
@@ -399,7 +436,7 @@ rate_node *add_rate_node(rate_node *node, const char *region_code, double rate) 
 rate_node *make_rate_node(const char *region_code, double rate) {
     if (region_code == NULL) {
         fprintf(stderr, "Number string empty, aborting\n");
-        return;
+        return NULL;
     }
 
     rate_node *newNode = malloc(sizeof(rate_node));
@@ -418,8 +455,6 @@ rate_node *make_rate_node(const char *region_code, double rate) {
         strcpy(newNode->region_code, region_code);
     }
     
-
-
     newNode->rate = rate;
 
     newNode->height = 1;
@@ -428,5 +463,73 @@ rate_node *make_rate_node(const char *region_code, double rate) {
     newNode->left = NULL;
     newNode->right = NULL;
 
+    printf("Created new tree node!\n");
     return newNode;
+}
+
+    rate_node *right_rotate_rate(rate_node *node) {
+        rate_node *leftChild = node->left;
+        rate_node * leftChildRight = leftChild->right;
+
+        // Rotate around left child
+        leftChild->right = node;
+        node->left = leftChildRight;
+
+        // Update heights
+        node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
+        leftChild->height = 1 + max(get_rate_node_height(leftChild->left), get_rate_node_height(leftChild->right));
+
+        // The left child is now the subtree root
+        return leftChild;
+    }
+    
+    rate_node *left_rotate_rate(rate_node *node) {
+            rate_node *rightChild = node->right;
+            rate_node * rightChildLeft = rightChild->left;
+
+            // Rotate around right child
+            rightChild->left = node;
+            node->right = rightChildLeft;
+
+            // Update heights
+            node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
+            rightChild->height = 1 + max(get_rate_node_height(rightChild->left), get_rate_node_height(rightChild->right));
+
+            // The right child is now the subtree root
+            return rightChild;
+    }
+
+void traverse_rates_inorder(rate_node *node, void (*visit) (rate_node*)) {
+    if (node == NULL) return;
+
+    traverse_rates_inorder(node->left, visit);
+    visit(node);
+    traverse_rates_inorder(node->right, visit);
+}
+
+void print_rate_node(rate_node *node) {
+    if (node == NULL) {
+        printf("Node is NULL\n");
+        return;
+    }
+    printf("Key: %s, Rate: %f\n", node->region_code, node->rate);
+    return;
+}
+
+int get_rate_node_height(rate_node *node) {
+    if (node == NULL) {
+        return 0;
+    }
+    return node->height;    
+}
+
+int get_rate_node_balance(rate_node *node) {
+    if (node == NULL) {
+        return 0;
+    }
+    return get_rate_node_height(node->left) - get_rate_node_height(node->right);    
+}
+
+int max(int a, int b) {
+    return (a > b) ? a : b;
 }
