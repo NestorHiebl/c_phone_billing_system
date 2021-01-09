@@ -147,6 +147,8 @@
         void traverse_rates_postorder(rate_node *node, void (*visit) (rate_node*));
         void print_rate_node(rate_node *node);
         void delete_rate_node(rate_node *node);
+
+        rate_node *search_rate_tree(rate_node *root, const char *region_code);
         
         // User AVL Tree functions
 

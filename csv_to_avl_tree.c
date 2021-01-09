@@ -393,29 +393,48 @@ char *validate_rate(char *rate){
     return rate;    
 }
 
-
-
-
-
-
-
+/**
+ *      Search by longest region code match
+ *      @brief Finds the longest region code match of a number in a rate binary search tree.
+ *      
+ *      @param root The root of the rate tree to be searched for.
+ *      @param callee_number The number whose longest region code match is to be found.
+ *      @return The rate node with the longest match, or @c NULL if no matches have been found.
+ * 
+ *      @todo Test this function.
+ */
 rate_node *search_by_longest_region_code_match(rate_node *root, const char *callee_number) {
+    if (callee_number == NULL) {
+        fprintf(stderr, "Cannot search for NULL region code, aborting\n");
+        return NULL;
+    }
+    
+    rate_node *current_longest_match = NULL;
 
+    size_t attempt_length = 1;
+
+    while (attempt_length <= strlen(callee_number)) {
+        //The block below copies the n starting digits of the callee number inro an array, then attempts to find a match
+        char callee_number_leading_segement[attempt_length + 1];        
+        strncpy(callee_number_leading_segement, callee_number, attempt_length);
+        callee_number_leading_segement[attempt_length] = '\0';
+        current_longest_match = search_rate_tree(root, callee_number_leading_segement);
+
+        attempt_length++;
+    }
+    //No match has been found
+    if (current_longest_match == NULL) printf("No match found for callee number \"%s\", aborting search\n", callee_number);
+    
+    return current_longest_match;
 }
-
-
-
-
-
-
 
 /**
  *      Max
- *      @brief Checks which of two integers is greater
+ *      @brief Checks which of two integers is greater.
  *      
- *      @param a The first int to be compared
- *      @param b The second int to be compared
- *      @returns @c a if @c a is greater, @c b if @c b is equal or greater
+ *      @param a The first int to be compared.
+ *      @param b The second int to be compared.
+ *      @returns @c a if @c a is greater, @c b if @c b is equal or greater.
  */
 int max(int a, int b) {
     return (a > b) ? a : b;
@@ -467,17 +486,14 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
     new_node->year = year;
     new_node->month = month;
 
-    
-    /******************************************* search by longest extension function goes here ********************************************/
-
-
+    // Not yet tested!
     rate_node *longest_rate_match = search_by_longest_region_code_match(rate_root, callee_number);
 
     if (longest_rate_match == NULL) {
         fprintf(stderr, "No rate match found for the number \"%s\", call price set to zero\n", new_node->callee);
         new_node->price = 0;
     } else {
-        new_node->price = (float) longest_rate_match->rate * duration;
+        new_node->price = (double) longest_rate_match->rate * duration;
     }
     
     
@@ -830,6 +846,30 @@ int get_rate_node_balance(rate_node *node) {
         return 0;
     }
     return get_rate_node_height(node->left) - get_rate_node_height(node->right);    
+}
+
+/**
+ *      Search rate tree
+ *      @brief Recursively search through rate tree, based on a given region code.
+ *      
+ *      @param root The root of the tree to be searched.
+ *      @param region_code The region code to search for. Cannot be @c NULL .
+ *      @return The rate node with the appropriate region code, or @c NULL if no node was found.
+ * 
+ *      @todo Test this function
+ */
+rate_node *search_rate_tree(rate_node *root, const char *region_code) {
+    if (region_code == NULL) {
+        fprintf(stderr, "Cannot search for NULL string, aborting\n");
+        return NULL;
+    }
+    
+
+    if ((root == NULL) || (strcmp(root->region_code, region_code) == 0)) return root;
+    
+    if (strcmp(root->region_code, region_code) < 0) search_rate_tree(root->left, region_code); 
+    
+    search_rate_tree(root->right, region_code);
 }
 
 /*****************************************************************************************************************
