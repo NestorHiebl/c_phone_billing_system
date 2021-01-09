@@ -19,28 +19,6 @@
     #define CSV_TO_AVL_TREE_FUNC
 
         /**
-         *      @typedef Rate linked list
-         * 
-         *      @brief The call rate node. Only used to store rate information. The data inside this structure will not be changed after 
-         *      being loaded in.
-         * 
-         *      @param region_code The number region code, formatted as a @c string to make longest match searches easier.
-         *      @param rate The call rate in @c double format. Determines the cost of a call to the region code per minute.
-         * 
-         *      @param previous The previous node. @c NULL for the head node.
-         *      @param next The next node. @c NULL for the tail node.      
-         */
-        typedef struct rate_linked_list {
-            
-            char *region_code;
-            double rate;
-
-            struct rate_linked_list *previous;
-            struct rate_linked_list *next;
-
-        } rate_linked_list;
-
-        /**
          *      @typedef Call linked list
          * 
          *      @brief The node for a single call.
@@ -68,8 +46,6 @@
             struct user_call_list *next;
 
         } user_call_list;
-
-
 
         /**
          *      @typedef Rate tree node
@@ -144,17 +120,17 @@
         char *validate_region_code(char **region_code);
         char *validate_rate(char *rate);
 
+        rate_node *search_by_longest_region_code_match(rate_node *root, const char *callee_number);
+        
         char *censor_calee_numer(char *callee_number);
 
         int max(int a, int b);
 
-        // Rate linked list functions - marked for removal as soon as the AVL functionality is up and running
+        // Call linked list functions
 
-        int append_rate(rate_linked_list **head, rate_linked_list **tail, char *region_code, double rate);
-        void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_index);
-        int delete_rate_list(rate_linked_list **head);
-
-        rate_linked_list *search_by_longest_region_code_match(rate_linked_list *head, const char *exension);
+        int insert_call(user_call_list **head, user_call_list **tail, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root);
+        void print_call_list(user_call_list *head, size_t start_index, size_t end_index);
+        int delete_call_list(user_call_list **head);
 
         // Rate AVL Tree functions
 

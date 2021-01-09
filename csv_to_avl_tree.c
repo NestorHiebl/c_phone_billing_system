@@ -374,49 +374,71 @@ char *validate_rate(char *rate){
 }
 
 /*****************************************************************************************************************
- * RATE LINKED LIST FUNCTIONS                                                                                    *
+ * CALL LINKED LIST FUNCTIONS                                                                                    *
  *****************************************************************************************************************/
 
 /**
- *      Appent rate node
+ *      Appent call node
  * 
- *      @brief Appends a new node to the rate linked list. If the head argument is NULL, it initializes a list instead.
+ *      @brief Inserts a new node into the call linked list so that the it remains ordered.
+ *      If the head argument is NULL, it initializes a list instead.
  *      
  *      @param head A double pointer to the head of the list, which will be changed dynamically.
  *      @param tail A double pointer to the tail of the list, which will be changed dynamically.
- *      @param region_code The region_code string, cannot be NULL.
- *      @param rate The rate associated with the region_code.
+ *      @param callee_number The number that was called, cannot be NULL.
+ *      @param duration The duration of the call.
+ *      @param year The year the call took place in.
+ *      @param month The month the call took place in.
+ *      @param rate_root The root of the rate AVL tree in which the relevant region codes are stored.
  * 
  *      @returns 1 if the function suceeds, 0 if it fails.
  */
-int append_rate(rate_linked_list **head, rate_linked_list **tail, char *region_code, double rate) {
+int insert_call(user_call_list **head, user_call_list **tail, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root) {
 
-    if (region_code == NULL) {
-        fprintf(stderr, "region_code string empty, aborting\n");
+    if (callee_number == NULL) {
+        fprintf(stderr, "Callee number string empty, aborting\n");
         return 0;
     } else if (!(*head == NULL) && ((*tail)->next) != NULL) {
         fprintf(stderr, "Head node is not last node, aborting\n");
         return 0;
     }
     
-    rate_linked_list *new_node = malloc(sizeof(rate_linked_list));
+    user_call_list *new_node = malloc(sizeof(user_call_list));
     if (new_node == NULL) {
-        fprintf(stderr, "Not enough memory to create new node\n");
+        fprintf(stderr, "Not enough memory to create new call linked list node\n");
         return 0;
     }
 
-    // Initialize region_code
-    new_node->region_code = malloc(sizeof(region_code));
-    if (new_node->region_code == NULL) {
-        fprintf(stderr, "Not enough memory to initialize region_code\n");
+    // Initialize callee number
+    new_node->callee = malloc(sizeof(callee_number));
+    if (new_node->callee == NULL) {
+        fprintf(stderr, "Not enough memory to initialize callee number\n");
         return 0;
     } else {
-        strcpy(new_node->region_code, region_code);    
+        strcpy(new_node->callee, callee_number);    
     }
     
-    new_node->rate = rate;
+    new_node->duration = duration;
+    new_node->year = year;
+    new_node->month = month;
+
     
-    if (*head == NULL) {
+    /******************************************* search by longest extension function goes here ********************************************/
+
+
+    rate_node *longest_rate_match = search_by_longest_region_code_match(rate_root, callee_number);
+
+    if (longest_rate_match == NULL) {
+        fprintf(stderr, "No rate match found for the number \"%s\", call price set to zero\n", new_node->callee);
+        new_node->price = 0;
+    } else {
+        new_node->price = (float) longest_rate_match->rate * duration;
+    }
+    
+    
+    
+    
+    if ((*head == NULL) && (*tail == NULL)) {
         // The list is being initialized
 
         new_node->previous = NULL;
@@ -426,12 +448,9 @@ int append_rate(rate_linked_list **head, rate_linked_list **tail, char *region_c
         *tail = new_node;
     } else {
         // The node is being appended to an existing list
-        (*tail)->next = new_node;
+        
 
-        new_node->previous = *tail;
-        new_node->next = NULL;
-
-        *tail = new_node;
+        /************************************** Node ordering mechanism goes here ************************************************/
 
         printf("Appended!\n");
     }
@@ -440,15 +459,15 @@ int append_rate(rate_linked_list **head, rate_linked_list **tail, char *region_c
 }
 
 /**
- *      Print rate list
+ *      Print user call list
  * 
- *      @brief Prints a slice of a rate linked list. If both indexes are set to 0, prints the entire list instead.
+ *      @brief Prints a slice of a call linked list. If both indexes are set to 0, prints the entire list instead.
  * 
  *      @param head The head of the linked list.
  *      @param start_index The starting index of the list slice.
  *      @param end_index The ending index of the list slice.
  */
-void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_index) {
+void print_call_list(user_call_list *head, size_t start_index, size_t end_index) {
     if (head == NULL) {
         fprintf(stderr, "Cannot print NULL list, aborting\n");
         return;
@@ -458,12 +477,14 @@ void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_inde
     }
     
     
-    rate_linked_list *current = head;
+    user_call_list *current = head;
     if ((start_index == 0) && (end_index == 0)) {
         // If no start and end indexes were given print the whole list
 
         while (current != NULL) {
-        printf("The rate for the region_code \"%s\" equals %f.\n", current->region_code, current->rate);
+        printf( "The called number is: \"%s\","
+                "The price of the call is: %f,\n"
+                "and it took place in month %ul of %ul.\n", current->callee, current->price, current->month, current->year);
         current = current->next;
         }    
     } else {
@@ -473,7 +494,9 @@ void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_inde
         while (current != NULL) {
             if (i >= start_index) {
                 // If we've reached the start index, print the node
-                printf("The rate for the region_code \"%s\" equals %2f.\n", current->region_code, current->rate);
+                printf( "The called number is: \"%s\","
+                        "The price of the call is: %f,\n"
+                        "and it took place in month %ul of %ul.\n", current->callee, current->price, current->month, current->year);
             }
 
             if (i > end_index) {
@@ -488,26 +511,26 @@ void print_rate_list(rate_linked_list *head, size_t start_index, size_t end_inde
 }
 
 /**
- *      Delete rate linked list     
+ *      Delete call linked list     
  * 
- *      @brief Deletes a rate linked list, freeing memory.
+ *      @brief Deletes a call linked list, freeing the memory it took up.
  * 
  *      @param head A double pointer to the head of the list. Will be set to NULL.
  *      @return 1 if successful, 0 if not. 
  */
-int delete_rate_list(rate_linked_list **head) {
+int delete_rate_list(user_call_list **head) {
     if (*head == NULL) {
         fprintf(stderr, "Cannot delete NULL list, aborting\n");
         return 0;
     }
 
-    rate_linked_list *current = *head;
+    user_call_list *current = *head;
 
     while (*head != NULL) {
         current = *head;
 
-        free(current->region_code);                       
-        current->region_code = NULL;
+        free(current->callee);                       
+        current->callee = NULL;
 
         *head = (*head)->next;
         free(current);
@@ -516,9 +539,6 @@ int delete_rate_list(rate_linked_list **head) {
     
     return 1;
 }
-
-
-// Note - The User list deletition function needs to be nested, because each node contains its own linked list.
 
 /*****************************************************************************************************************
  * AVL RATE TREE FUNCTIONS                                                                                       *
@@ -701,8 +721,8 @@ void traverse_rates_inorder(rate_node *node, void (*visit) (rate_node*)) {
 void traverse_rates_postorder(rate_node *node, void (*visit) (rate_node*)) {
     if (node == NULL) return;
 
-    traverse_rates_inorder(node->left, visit);
-    traverse_rates_inorder(node->right, visit);
+    traverse_rates_postorder(node->left, visit);
+    traverse_rates_postorder(node->right, visit);
     visit(node);
 }
 
