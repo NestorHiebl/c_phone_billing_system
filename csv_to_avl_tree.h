@@ -5,7 +5,7 @@
  *      
  *      @brief The external function header for the csv based phone billing project. It saves rate data in an AVL tree and user data in an
  *      AVL tree where each node is the head of a linked list containing the respective user's call data. Data is collected by parsing two
- *      csv files using @c fgets and @c strtok. Invalid or corrupt data is logged and discarded with no attempt at recovery.
+ *      csv files using @c fgets , @c strtok and @c sscanf . Invalid or corrupt data is logged and discarded with no attempt at recovery.
  * 
  *      https://github.com/NestorHiebl/c_phone_billing_system
  */
@@ -128,7 +128,7 @@
 
         // Call linked list functions
 
-        int insert_call(user_call_list **head, user_call_list **tail, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root);
+        int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root);
         void print_call_list(user_call_list *head, size_t start_index, size_t end_index);
         int delete_call_list(user_call_list **head);
 
@@ -150,7 +150,7 @@
         
         // User AVL Tree functions
 
-        user_node *add_user_node(user_node *node, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month);
+        user_node *add_user_node(user_node *node, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root);
         user_node *make_user_node(const char *number);
         
         int get_user_node_height(user_node *node);

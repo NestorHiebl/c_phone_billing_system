@@ -13,6 +13,9 @@
 #include "csv_to_avl_tree.h"
 #include <ctype.h>
 
+#define CURRENT_YEAR 2021
+#define TELEPHONE_INVENTION_YEAR 1876
+
 /**
  *      Open CSV
  * 
@@ -135,6 +138,29 @@ user_node *parse_call_csv(FILE *filename) {
             caller_number_token = validate_phone_number(&caller_number_token);
             callee_number_token = validate_phone_number(&callee_number_token);
             
+
+
+            /*********************************************************
+            * Year and month extraction algorithm goes here          *
+            *********************************************************/
+            size_t year_token = 0;
+            size_t month_token = 0;
+
+            // Needs to be tested
+            if ((sscanf(datetime_token, "%4ul-%2ul-%*d %*d:%*d:%*d", &year_token, &month_token)) != 2) {
+                fprintf(stderr, "Error: Invalid date found on line %lu\n", line_counter);
+                line_counter++;
+                continue;
+            } else if ((month_token > 12) || (year_token > CURRENT_YEAR) || (year_token < TELEPHONE_INVENTION_YEAR)) {
+                fprintf(stderr, "Error: Invalid year/month found on line %lu\n", line_counter);
+                line_counter++;
+                continue;
+            }
+
+            printf("Year: %lu, Month: %lu\n", year_token, month_token);
+            
+
+
             
             if ((caller_number_token != NULL) && (callee_number_token != NULL)) {
                 
@@ -142,7 +168,7 @@ user_node *parse_call_csv(FILE *filename) {
                 * The necesarry data has been collected, create the node *
                 *********************************************************/
                 
-                // Add user node
+                root = add_user_node(root, callee_number_token, callee_number_token, duration_token, year_token, month_token, root);
 
             } else {
                 printf("Invalid region_code found on call line %lu\n", line_counter);
@@ -267,9 +293,11 @@ rate_node *parse_rate_csv(FILE *filename) {
 
 
 
+/*****************************************************************************************************************
+ * PATTERN CHECKING FUNCTIONS                                                                                    *
+ *****************************************************************************************************************/
 
-
-// TODO
+// TODO ///////////////////////////////////////////////////////////////////////////////////////////////
 
 char *validate_phone_number(char **phone_number) {
     if (*phone_number == NULL) {
@@ -302,14 +330,6 @@ char *validate_phone_number(char **phone_number) {
 
     return legal ? *phone_number : NULL;    
 }
-
-
-
-
-
-
-
-
 
 /**
  *      Validate region_code
@@ -373,6 +393,34 @@ char *validate_rate(char *rate){
     return rate;    
 }
 
+
+
+
+
+
+
+rate_node *search_by_longest_region_code_match(rate_node *root, const char *callee_number) {
+
+}
+
+
+
+
+
+
+
+/**
+ *      Max
+ *      @brief Checks which of two integers is greater
+ *      
+ *      @param a The first int to be compared
+ *      @param b The second int to be compared
+ *      @returns @c a if @c a is greater, @c b if @c b is equal or greater
+ */
+int max(int a, int b) {
+    return (a > b) ? a : b;
+}
+
 /*****************************************************************************************************************
  * CALL LINKED LIST FUNCTIONS                                                                                    *
  *****************************************************************************************************************/
@@ -393,13 +441,10 @@ char *validate_rate(char *rate){
  * 
  *      @returns 1 if the function suceeds, 0 if it fails.
  */
-int insert_call(user_call_list **head, user_call_list **tail, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root) {
+int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root) {
 
     if (callee_number == NULL) {
         fprintf(stderr, "Callee number string empty, aborting\n");
-        return 0;
-    } else if (!(*head == NULL) && ((*tail)->next) != NULL) {
-        fprintf(stderr, "Head node is not last node, aborting\n");
         return 0;
     }
     
@@ -438,14 +483,13 @@ int insert_call(user_call_list **head, user_call_list **tail, char *callee_numbe
     
     
     
-    if ((*head == NULL) && (*tail == NULL)) {
+    if ((*head == NULL)) {
         // The list is being initialized
 
         new_node->previous = NULL;
         new_node->next = NULL;
 
         *head = new_node;
-        *tail = new_node;
     } else {
         // The node is being appended to an existing list
         
@@ -788,20 +832,6 @@ int get_rate_node_balance(rate_node *node) {
     return get_rate_node_height(node->left) - get_rate_node_height(node->right);    
 }
 
-/**
- *      Max
- *      @brief Checks which of two integers is greater
- *      
- *      @param a The first int to be compared
- *      @param b The second int to be compared
- *      @returns @c a if @c a is greater, @c b if @c b is equal or greater
- */
-int max(int a, int b) {
-    return (a > b) ? a : b;
-}
-
-
-
 /*****************************************************************************************************************
  * AVL USER TREE FUNCTIONS                                                                                       *
  ****************************************************************************************************************/
@@ -809,35 +839,52 @@ int max(int a, int b) {
 /**
  *      Insert user tree node
  * 
- *      @brief Recursively inserts a new user node to the rate AVL tree. The tree is automatically rebalanced in the process.
+ *      @brief Recursively inserts a new user node to the user AVL tree. The tree is automatically rebalanced in the process.
  *      Interfacing with the user AVL tree should only be done through this function and the traversals.
  *      
  *      @param node A pointer to the tree root. May change due to rebalancing.
- *      @param number The user number string, cannot be NULL.
+ *      @param caller_number The user number string, cannot be NULL.
+ *      @param callee_number The number being called, cannot be NULL.
+ *      @param duration The duration of the call.
+ *      @param year The year the call took place in.
+ *      @param month The month the call took place in.
+ * 
+ *      @todo Add calls to the appropriate call linked list functions
  * 
  *      @returns The tree's new root.
  */
-user_node *add_user_node(user_node *node, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month) {
+user_node *add_user_node(user_node *node, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root) {
     if (caller_number == NULL) {
         fprintf(stderr, "Number string empty, aborting\n");
         return NULL;
     }
 
     if (node == NULL){
-        return make_rate_node(caller_number);
+
+        user_node *temp_new_user_node = make_user_node(caller_number);
+
+        // Inserting into the call linked list
+        temp_new_user_node->call_list_head = insert_call(temp_new_user_node->call_list_head, callee_number, duration, year, month, rate_root);
+
+        calculate_user_stats(temp_new_user_node);
+
+        return temp_new_user_node;
     }
 
     if (strcmp(caller_number, node->number) < 0) {
         // Going left
-        node->left = add_user_node(node->left, caller_number, callee_number, duration, year, month);
+        node->left = add_user_node(node->left, caller_number, callee_number, duration, year, month, rate_root);
     } else if (strcmp(caller_number, node->number) > 0) {
         // Going right
-        node->right = add_user_node(node->right, caller_number, callee_number, duration, year, month);
+        node->right = add_user_node(node->right, caller_number, callee_number, duration, year, month, rate_root);
     } else {
         // The user already has a node - in this case we just want to add to their call data linked list
         printf("User present in tree, appending call data\n");
 
-        /******************* CALL DATA APPENDED HERE *************************/
+        // Inserting into the call linked list
+        node->call_list_head = insert_call(node->call_list_head, callee_number, duration, year, month, rate_root);
+
+        calculate_user_stats(node);
 
         return node;
     }
@@ -1006,8 +1053,8 @@ void print_user_node(user_node *node) {
     }
     printf( "Number: %s, "
             "Total call price: %f, "
-            "Total call amount: %ul, "
-            "Total call duration: %ul\n", node->number, node->total_bill, node->total_call_number, node->total_call_duration);
+            "Total call amount: %lu, "
+            "Total call duration: %lu\n", node->number, node->total_bill, node->total_call_number, node->total_call_duration);
     return;
 }
 
@@ -1026,7 +1073,7 @@ void delete_user_node(user_node *node) {
     free(node->number);
     node->number = NULL;
 
-    /************************************** Linked list deletition goes here ********************************************/
+    delete_call_list(node->call_list_head);
 
     node->left = NULL;
     node->right = NULL;
