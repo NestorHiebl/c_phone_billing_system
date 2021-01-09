@@ -125,7 +125,6 @@
 
             int height;
 
-            struct user_node *parent;
             struct user_node *left;
             struct user_node *right;
 
@@ -175,14 +174,14 @@
         
         // User AVL Tree functions
 
-        user_node *add_user_node(user_node *root, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month);
+        user_node *add_user_node(user_node *node, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month);
         user_node *make_user_node(const char *number);
         
         int get_user_node_height(user_node *node);
         int get_user_node_balance(user_node *node);
 
-        void left_rotate_user(user_node *node);
-        void right_rotate_user(user_node *node);
+        user_node *left_rotate_user(user_node *node);
+        user_node *right_rotate_user(user_node *node);
 
         int add_user_call(user_node *user, const char *callee, size_t duration, double price, size_t year, size_t month);
 

@@ -240,7 +240,6 @@ rate_node *parse_rate_csv(FILE *filename) {
             }
 
             region_code_token = validate_region_code(&region_code_token);
-            //double rate = validate_rate(rate_token);
             
             if (region_code_token != NULL) {
                 
@@ -522,7 +521,7 @@ int delete_rate_list(rate_linked_list **head) {
 // Note - The User list deletition function needs to be nested, because each node contains its own linked list.
 
 /*****************************************************************************************************************
- * AVL TREE FUNCTIONS                                                                                            *
+ * AVL RATE TREE FUNCTIONS                                                                                       *
  ****************************************************************************************************************/
 
 /**
@@ -779,4 +778,266 @@ int get_rate_node_balance(rate_node *node) {
  */
 int max(int a, int b) {
     return (a > b) ? a : b;
+}
+
+
+
+/*****************************************************************************************************************
+ * AVL USER TREE FUNCTIONS                                                                                       *
+ ****************************************************************************************************************/
+
+/**
+ *      Insert user tree node
+ * 
+ *      @brief Recursively inserts a new user node to the rate AVL tree. The tree is automatically rebalanced in the process.
+ *      Interfacing with the user AVL tree should only be done through this function and the traversals.
+ *      
+ *      @param node A pointer to the tree root. May change due to rebalancing.
+ *      @param number The user number string, cannot be NULL.
+ * 
+ *      @returns The tree's new root.
+ */
+user_node *add_user_node(user_node *node, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month) {
+    if (caller_number == NULL) {
+        fprintf(stderr, "Number string empty, aborting\n");
+        return NULL;
+    }
+
+    if (node == NULL){
+        return make_rate_node(caller_number);
+    }
+
+    if (strcmp(caller_number, node->number) < 0) {
+        // Going left
+        node->left = add_user_node(node->left, caller_number, callee_number, duration, year, month);
+    } else if (strcmp(caller_number, node->number) > 0) {
+        // Going right
+        node->right = add_user_node(node->right, caller_number, callee_number, duration, year, month);
+    } else {
+        // The user already has a node - in this case we just want to add to their call data linked list
+        printf("User present in tree, appending call data\n");
+
+        /******************* CALL DATA APPENDED HERE *************************/
+
+        return node;
+    }
+    
+    // Update node height
+    node->height = 1 + max(get_user_node_height(node->left), get_user_node_height(node->right));
+
+    // Get node balance    
+    int balance = get_user_node_balance(node);
+
+    // Imbalance is in left child's left subtree
+    if ((balance > 1) && (strcmp(caller_number, node->left->number) < 0)) {
+        return right_rotate_user(node);
+    }
+
+    // Imbalance is in right child's right subtree
+    if ((balance < -1) && (strcmp(caller_number, node->right->number) > 0)) {
+        return left_rotate_user(node);
+    }
+    
+    // Imbalance is in left child's right subtree
+    if ((balance > 1) && (strcmp(caller_number, node->left->number) > 0)) {
+        node->left = left_rotate_user(node->left);
+        return right_rotate_user(node);
+    }
+
+    // Imbalance is in right child's left subtree
+    if ((balance < -1) && (strcmp(caller_number, node->right->number) < 0)) {
+        node->right = right_rotate_user(node->right);
+        return left_rotate_user(node);
+    }
+
+    // Return the current node, unchanged
+    return node;    
+}
+
+/**
+ *      Make user node
+ *      @brief Initializes a new user node and returns a pointer to it. Is called internally by @c add_user_node.
+ *      
+ *      @param caller_number The user's number string, cannot be NULL.
+ *      @returns A pointer to the new user node, or NULL if there was an error.
+ */
+user_node *make_user_node(const char *caller_number) {
+    if (caller_number == NULL) {
+        fprintf(stderr, "Caller number string empty, aborting\n");
+        return NULL;
+    }
+
+    user_node *newNode = malloc(sizeof(user_node));
+    if (newNode == NULL) {
+        fprintf(stderr, "Not enough memory to create new user node, aborting\n");
+        return NULL;
+    }
+    
+    newNode->number = malloc(sizeof(caller_number));
+    if (newNode->number == NULL) {
+        fprintf(stderr, "Not enough memory to initialize caller number field, aborting\n");
+        free(newNode);
+        newNode = NULL;
+        return NULL;
+    } else {
+        strcpy(newNode->number, caller_number);
+    }
+    
+    newNode->total_bill = 0;
+    newNode->total_call_duration = 0;
+    newNode->total_call_number = 0;
+
+    newNode->call_list_head = NULL;
+
+    newNode->height = 1;
+
+    newNode->left = NULL;
+    newNode->right = NULL;
+
+    return newNode;
+}
+
+/**
+ *      Right rotate user node
+ *      @brief Performs a right rotation around a given node's left child. Should only be called by the @c add_user_node function.
+ *      
+ *      @param node The node to be right rotated
+ *      @returns The passed node's left child, which is the new subtree root.
+ */
+user_node *right_rotate_user(user_node *node) {
+    user_node *leftChild = node->left;
+    user_node * leftChildRight = leftChild->right;
+
+    // Rotate around left child
+    leftChild->right = node;
+    node->left = leftChildRight;
+
+    // Update heights
+    node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
+    leftChild->height = 1 + max(get_rate_node_height(leftChild->left), get_rate_node_height(leftChild->right));
+
+    // The left child is now the subtree root
+    return leftChild;
+}
+
+/**
+ *      Left rotate user node
+ *      @brief Performs a left rotation around a given node's right child. Should only be called by the @c add_user_node function.
+ *      
+ *      @param node The node to be left rotated
+ *      @returns The passed node's right child, which is the new subtree root.
+ */
+user_node *left_rotate_user(user_node *node) {
+        user_node *rightChild = node->right;
+        user_node * rightChildLeft = rightChild->left;
+
+        // Rotate around right child
+        rightChild->left = node;
+        node->right = rightChildLeft;
+
+        // Update heights
+        node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
+        rightChild->height = 1 + max(get_rate_node_height(rightChild->left), get_rate_node_height(rightChild->right));
+
+        // The right child is now the subtree root
+        return rightChild;
+}
+
+/**
+ *      Traverse users inorder
+ *      @brief Traverses a given user tree inorder. Useful for printing.
+ *      
+ *      @param node The root of the tree
+ *      @param visit The function to be performed upon visiting
+ */
+void traverse_users_inorder(user_node *node, void (*visit) (user_node*)) {
+    if (node == NULL) return;
+
+    traverse_users_inorder(node->left, visit);
+    visit(node);
+    traverse_users_inorder(node->right, visit);
+}
+
+/**
+ *      Traverse users postorder
+ *      @brief Traverses a given user tree postorder. Useful for deletition.
+ *      
+ *      @param node The root of the tree
+ *      @param visit The function to be performed upon visiting
+ */
+void traverse_users_postorder(user_node *node, void (*visit) (user_node*)) {
+    if (node == NULL) return;
+
+    traverse_users_postorder(node->left, visit);
+    traverse_users_postorder(node->right, visit);
+    visit(node);
+}
+
+/**
+ *      Print user node
+ *      @brief Prints a single node in a user AVL tree. Can be used for traversals.
+ *      
+ *      @param node The node to be printed
+ */
+void print_user_node(user_node *node) {
+    if (node == NULL) {
+        printf("Node is NULL\n");
+        return;
+    }
+    printf( "Number: %s, "
+            "Total call price: %f, "
+            "Total call amount: %ul, "
+            "Total call duration: %ul\n", node->number, node->total_bill, node->total_call_number, node->total_call_duration);
+    return;
+}
+
+/**
+ *      Delete user node
+ *      @brief Deletes a single node from a user AVL tree. Can be used for (postorder) traversals.
+ *      Note that there is an emberred linked list deletition procedure in this function.
+ *      
+ *      @param node The node to be deleted
+ */
+void delete_user_node(user_node *node) {
+    if (node == NULL) {
+        fprintf(stderr, "Cannot delete NULL node\n");
+        return;
+    }
+    free(node->number);
+    node->number = NULL;
+
+    /************************************** Linked list deletition goes here ********************************************/
+
+    node->left = NULL;
+    node->right = NULL;
+
+    free(node);
+}
+
+/**
+ *      Get user node height
+ *      @brief Get the user node height
+ *      
+ *      @param node The node whose height is to be checked
+ *      @returns @c 0 if the node is @c NULL, otherwise its height
+ */
+int get_user_node_height(user_node *node) {
+    if (node == NULL) {
+        return 0;
+    }
+    return node->height;    
+}
+
+/**
+ *      Get user node balance
+ *      @brief Get the user node balance
+ *      
+ *      @param node The node whose balance is to be checked
+ *      @returns @c 0 if the node is @c NULL, otherwise its balance
+ */
+int get_user_node_balance(user_node *node) {
+    if (node == NULL) {
+        return 0;
+    }
+    return get_user_node_height(node->left) - get_user_node_height(node->right);    
 }
