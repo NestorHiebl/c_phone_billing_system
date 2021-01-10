@@ -112,7 +112,7 @@
         int close_csv(FILE *filepointer);
 
         rate_node *parse_rate_csv(FILE *filename);
-        user_node *parse_call_csv(FILE *filename);
+        user_node *parse_call_csv(FILE *filename, rate_node *rate_root);
     
         // Pattern checking functions
 
@@ -131,6 +131,7 @@
         int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root);
         void print_call_list(user_call_list *head, size_t start_index, size_t end_index);
         int delete_call_list(user_call_list **head);
+        size_t get_call_node_datetime(user_call_list *node);
 
         // Rate AVL Tree functions
 
@@ -152,7 +153,7 @@
         
         // User AVL Tree functions
 
-        user_node *add_user_node(user_node *node, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root);
+        user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root);
         user_node *make_user_node(const char *number);
         
         int get_user_node_height(user_node *node);
@@ -167,6 +168,7 @@
         void traverse_users_postorder(user_node *node, void (*visit) (user_node*));
         void print_user_node(user_node *node);
         void delete_user_node(user_node *node);
+        
         void calculate_user_stats(user_node *user);
         void generate_monthly_bill_files(user_node *bill);
         void generate_monthly_cdr_files(user_node *bill);

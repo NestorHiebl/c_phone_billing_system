@@ -72,8 +72,6 @@ int main(int argc, char **argv){
 
         printf("%li, %li, %f\n", total_call_number, total_call_duration, total_call_price);
 
-        
-        // print_rate_list(head, 0, 0);
 
         rate_node *rate_tree_root = NULL;
 
@@ -88,6 +86,20 @@ int main(int argc, char **argv){
         rate_tree_root = add_rate_node(rate_tree_root, "10", 0.0);
 
         traverse_rates_inorder(rate_tree_root, print_rate_node);
+
+        user_call_list *head = NULL;
+
+        insert_call(&head, "436802119876", 4, 2000, 10, rate_root);
+        insert_call(&head, "436642129876", 4, 2010, 11, rate_root);
+        insert_call(&head, "436504069876", 4, 2009, 6, rate_root);
+        insert_call(&head, "4369910149876", 4, 2020, 5, rate_root);
+        insert_call(&head, "431311639876", 4, 2001, 7, rate_root);
+        insert_call(&head, "4342279876", 4, 1999, 7, rate_root);
+        insert_call(&head, "43613529876", 4, 2010, 3, rate_root);
+        insert_call(&head, "4369919339876", 4, 2001, 4, rate_root);
+        insert_call(&head, "498282889876", 4, 1980, 7, rate_root);
+
+        print_call_list(head, 0, 0);
 
         traverse_rates_postorder(rate_tree_root, delete_rate_node);
         rate_tree_root = NULL;

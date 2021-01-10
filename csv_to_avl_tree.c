@@ -71,7 +71,7 @@ int close_csv(FILE *filepointer) {
 }
 
 
-user_node *parse_call_csv(FILE *filename) {
+user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
 
     char csv_line[1024];
 
@@ -137,6 +137,7 @@ user_node *parse_call_csv(FILE *filename) {
 
             caller_number_token = validate_phone_number(&caller_number_token);
             callee_number_token = validate_phone_number(&callee_number_token);
+
             
 
 
@@ -147,7 +148,7 @@ user_node *parse_call_csv(FILE *filename) {
             size_t month_token = 0;
 
             // Needs to be tested
-            if ((sscanf(datetime_token, "%4ul-%2ul-%*d %*d:%*d:%*d", &year_token, &month_token)) != 2) {
+            if ((sscanf(datetime_token, "%4lu-%2lu-%*d %*d:%*d:%*d", &year_token, &month_token)) != 2) {
                 fprintf(stderr, "Error: Invalid date found on line %lu\n", line_counter);
                 line_counter++;
                 continue;
@@ -168,7 +169,7 @@ user_node *parse_call_csv(FILE *filename) {
                 * The necesarry data has been collected, create the node *
                 *********************************************************/
                 
-                root = add_user_node(root, callee_number_token, callee_number_token, duration_token, year_token, month_token, root);
+                root = add_user_node(root, caller_number_token, callee_number_token, atoi(duration_token), year_token, month_token, rate_root);
 
             } else {
                 printf("Invalid region_code found on call line %lu\n", line_counter);
@@ -418,8 +419,10 @@ rate_node *search_by_longest_region_code_match(rate_node *root, const char *call
         char callee_number_leading_segement[attempt_length + 1];        
         strncpy(callee_number_leading_segement, callee_number, attempt_length);
         callee_number_leading_segement[attempt_length] = '\0';
-        current_longest_match = search_rate_tree(root, callee_number_leading_segement);
 
+        if (search_rate_tree(root, callee_number_leading_segement) != NULL) {
+            current_longest_match = search_rate_tree(root, callee_number_leading_segement);
+        }
         attempt_length++;
     }
     //No match has been found
@@ -445,7 +448,7 @@ int max(int a, int b) {
  *****************************************************************************************************************/
 
 /**
- *      Appent call node
+ *      Insert call node
  * 
  *      @brief Inserts a new node into the call linked list so that the it remains ordered.
  *      If the head argument is NULL, it initializes a list instead.
@@ -459,6 +462,9 @@ int max(int a, int b) {
  *      @param rate_root The root of the rate AVL tree in which the relevant region codes are stored.
  * 
  *      @returns 1 if the function suceeds, 0 if it fails.
+ * 
+ *      @todo Insert node ordering mechanism
+ *      @todo Censor the callee number
  */
 int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root) {
 
@@ -496,9 +502,6 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
         new_node->price = (double) longest_rate_match->rate * duration;
     }
     
-    
-    
-    
     if ((*head == NULL)) {
         // The list is being initialized
 
@@ -510,12 +513,46 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
         // The node is being appended to an existing list
         
 
-        /************************************** Node ordering mechanism goes here ************************************************/
+        if (get_call_node_datetime(new_node) <= get_call_node_datetime(*head)) {
+            // The new node comes before root
+            new_node->next = *head;
+            new_node->previous = NULL;
+            (*head)->previous = new_node;
+            *head = new_node;
 
-        printf("Appended!\n");
+            return 1;
+        } else {
+            user_call_list *current = *head;
+
+            while (current != NULL) {
+                
+                if (get_call_node_datetime(current) > get_call_node_datetime(new_node)) {
+                    // We found the node directly after the new node
+                    current->previous->next = new_node;
+                    new_node->previous = current->previous;
+                    new_node->next = current;
+                    current->previous = new_node;                   
+
+                    return 1;
+                } else if (current->next == NULL) {
+                    // Appending to end of list
+
+                    current->next = new_node;
+                    new_node->previous = current;
+                    new_node->next = NULL;
+
+                    return 1;
+                }
+                current = current->next;
+            }
+        }
     }
-    
-    return 1;    
+    // Shouldn't happen
+    return 0;
+}
+
+size_t get_call_node_datetime(user_call_list *node) {
+    return (node == NULL) ? 0 : (node->year * 100) + node->month;
 }
 
 /**
@@ -544,7 +581,7 @@ void print_call_list(user_call_list *head, size_t start_index, size_t end_index)
         while (current != NULL) {
         printf( "The called number is: \"%s\","
                 "The price of the call is: %f,\n"
-                "and it took place in month %ul of %ul.\n", current->callee, current->price, current->month, current->year);
+                "and it took place in month %lu of %lu.\n", current->callee, current->price, current->month, current->year);
         current = current->next;
         }    
     } else {
@@ -556,7 +593,7 @@ void print_call_list(user_call_list *head, size_t start_index, size_t end_index)
                 // If we've reached the start index, print the node
                 printf( "The called number is: \"%s\","
                         "The price of the call is: %f,\n"
-                        "and it took place in month %ul of %ul.\n", current->callee, current->price, current->month, current->year);
+                        "and it took place in month %lu of %lu.\n", current->callee, current->price, current->month, current->year);
             }
 
             if (i > end_index) {
@@ -578,7 +615,7 @@ void print_call_list(user_call_list *head, size_t start_index, size_t end_index)
  *      @param head A double pointer to the head of the list. Will be set to NULL.
  *      @return 1 if successful, 0 if not. 
  */
-int delete_rate_list(user_call_list **head) {
+int delete_call_list(user_call_list **head) {
     if (*head == NULL) {
         fprintf(stderr, "Cannot delete NULL list, aborting\n");
         return 0;
@@ -870,6 +907,8 @@ rate_node *search_rate_tree(rate_node *root, const char *region_code) {
     if (strcmp(root->region_code, region_code) < 0) search_rate_tree(root->left, region_code); 
     
     search_rate_tree(root->right, region_code);
+
+    return NULL;
 }
 
 /*****************************************************************************************************************
@@ -888,12 +927,13 @@ rate_node *search_rate_tree(rate_node *root, const char *region_code) {
  *      @param duration The duration of the call.
  *      @param year The year the call took place in.
  *      @param month The month the call took place in.
+ *      @param rate_root The root of the rate tree that the rate plans are stored in.
  * 
  *      @todo Add calls to the appropriate call linked list functions
  * 
  *      @returns The tree's new root.
  */
-user_node *add_user_node(user_node *node, const char *caller_number, const char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root) {
+user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root) {
     if (caller_number == NULL) {
         fprintf(stderr, "Number string empty, aborting\n");
         return NULL;
@@ -904,9 +944,11 @@ user_node *add_user_node(user_node *node, const char *caller_number, const char 
         user_node *temp_new_user_node = make_user_node(caller_number);
 
         // Inserting into the call linked list
-        temp_new_user_node->call_list_head = insert_call(temp_new_user_node->call_list_head, callee_number, duration, year, month, rate_root);
+        insert_call(&(temp_new_user_node->call_list_head), callee_number, duration, year, month, rate_root);
 
-        calculate_user_stats(temp_new_user_node);
+
+        /******************************************************* TODO ****************************************************/
+        // calculate_user_stats(temp_new_user_node);
 
         return temp_new_user_node;
     }
@@ -922,9 +964,10 @@ user_node *add_user_node(user_node *node, const char *caller_number, const char 
         printf("User present in tree, appending call data\n");
 
         // Inserting into the call linked list
-        node->call_list_head = insert_call(node->call_list_head, callee_number, duration, year, month, rate_root);
+        insert_call(&(node->call_list_head), callee_number, duration, year, month, rate_root);
 
-        calculate_user_stats(node);
+        /******************************************************* TODO ****************************************************/
+        // calculate_user_stats(node);
 
         return node;
     }
@@ -1020,8 +1063,8 @@ user_node *right_rotate_user(user_node *node) {
     node->left = leftChildRight;
 
     // Update heights
-    node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
-    leftChild->height = 1 + max(get_rate_node_height(leftChild->left), get_rate_node_height(leftChild->right));
+    node->height = 1 + max(get_user_node_height(node->left), get_user_node_height(node->right));
+    leftChild->height = 1 + max(get_user_node_height(leftChild->left), get_user_node_height(leftChild->right));
 
     // The left child is now the subtree root
     return leftChild;
@@ -1043,8 +1086,8 @@ user_node *left_rotate_user(user_node *node) {
         node->right = rightChildLeft;
 
         // Update heights
-        node->height = 1 + max(get_rate_node_height(node->left), get_rate_node_height(node->right));
-        rightChild->height = 1 + max(get_rate_node_height(rightChild->left), get_rate_node_height(rightChild->right));
+        node->height = 1 + max(get_user_node_height(node->left), get_user_node_height(node->right));
+        rightChild->height = 1 + max(get_user_node_height(rightChild->left), get_user_node_height(rightChild->right));
 
         // The right child is now the subtree root
         return rightChild;
@@ -1113,7 +1156,7 @@ void delete_user_node(user_node *node) {
     free(node->number);
     node->number = NULL;
 
-    delete_call_list(node->call_list_head);
+    delete_call_list(&(node->call_list_head));
 
     node->left = NULL;
     node->right = NULL;
