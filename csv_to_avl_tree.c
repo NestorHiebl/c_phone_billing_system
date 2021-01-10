@@ -420,8 +420,10 @@ rate_node *search_by_longest_region_code_match(rate_node *root, const char *call
         strncpy(callee_number_leading_segement, callee_number, attempt_length);
         callee_number_leading_segement[attempt_length] = '\0';
 
-        if (search_rate_tree(root, callee_number_leading_segement) != NULL) {
-            current_longest_match = search_rate_tree(root, callee_number_leading_segement);
+        // Only save the search results if they are not NULL
+        rate_node *new_attempt = search_rate_tree(root, callee_number_leading_segement);
+        if (new_attempt != NULL) {
+            current_longest_match = new_attempt;
         }
         attempt_length++;
     }
@@ -579,8 +581,8 @@ void print_call_list(user_call_list *head, size_t start_index, size_t end_index)
         // If no start and end indexes were given print the whole list
 
         while (current != NULL) {
-        printf( "The called number is: \"%s\","
-                "The price of the call is: %f,\n"
+        printf( "The called number is: \"%s\", "
+                "The price of the call is: %.2f, "
                 "and it took place in month %lu of %lu.\n", current->callee, current->price, current->month, current->year);
         current = current->next;
         }    
@@ -592,7 +594,7 @@ void print_call_list(user_call_list *head, size_t start_index, size_t end_index)
             if (i >= start_index) {
                 // If we've reached the start index, print the node
                 printf( "The called number is: \"%s\","
-                        "The price of the call is: %f,\n"
+                        "The price of the call is: %.2f,\n"
                         "and it took place in month %lu of %lu.\n", current->callee, current->price, current->month, current->year);
             }
 
@@ -901,13 +903,23 @@ rate_node *search_rate_tree(rate_node *root, const char *region_code) {
         return NULL;
     }
     
-
-    if ((root == NULL) || (strcmp(root->region_code, region_code) == 0)) return root;
+    if (root == NULL) {
+        printf("No match found for region code %s\n", region_code);
+        return NULL;
+    }
     
-    if (strcmp(root->region_code, region_code) < 0) search_rate_tree(root->left, region_code); 
-    
-    search_rate_tree(root->right, region_code);
 
+    if ((strcmp(region_code, root->region_code) == 0)) {
+        printf("Match found between region code %s and node with code %s\n", region_code, root->region_code);
+        return root;
+    }
+    
+    if (strcmp(region_code, root->region_code) < 0) {
+        return search_rate_tree(root->left, region_code);
+    } else {
+        return search_rate_tree(root->right, region_code);
+    }
+    
     return NULL;
 }
 
