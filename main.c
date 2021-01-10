@@ -51,6 +51,7 @@ int main(int argc, char **argv){
 
     // Push the second non-option argument into the call record variable
     getopt(argc, argv, "--");
+    printf("Optarg after second getopt call: %s\n", optarg);
     FILE *call_record = open_csv(optarg);
 
     if ((call_rates == NULL) || (call_record == NULL)) {
@@ -62,63 +63,28 @@ int main(int argc, char **argv){
     rate_node *rate_root = parse_rate_csv(call_rates);
     traverse_rates_inorder(rate_root, print_rate_node);
 
+    user_node *user_root = parse_call_csv(call_record, rate_root);
+    traverse_users_inorder(user_root, print_user_node);
+
     close_csv(call_rates);
     close_csv(call_record);
 
     
 
+    printf("%li, %li, %f\n", total_call_number, total_call_duration, total_call_price);
+
     #ifdef DEBUG
 
-        printf("%li, %li, %f\n", total_call_number, total_call_duration, total_call_price);
+    print_call_list(user_root->call_list_head, 0, 0);    
 
 
-        rate_node *rate_tree_root = NULL;
-
-        rate_tree_root = add_rate_node(rate_tree_root, "01", 0.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "02", 5.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "05", 5.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "04", 5.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "03", 5.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "06", 0.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "07", 0.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "13", 0.0);
-        rate_tree_root = add_rate_node(rate_tree_root, "10", 0.0);
-
-        traverse_rates_inorder(rate_tree_root, print_rate_node);
-
-        user_call_list *head = NULL;
-
-        insert_call(&head, "436802119876", 4, 2000, 10, rate_root);
-        insert_call(&head, "436642129876", 16, 2010, 11, rate_root);
-        insert_call(&head, "436504069876", 6, 2009, 6, rate_root);
-        insert_call(&head, "4369910149876", 1000, 2020, 5, rate_root);
-        insert_call(&head, "431311639876", 4, 2001, 7, rate_root);
-        insert_call(&head, "4342279876", 4, 1999, 7, rate_root);
-        insert_call(&head, "43613529876", 4, 2010, 3, rate_root);
-        insert_call(&head, "4369919339876", 4, 2001, 4, rate_root);
-        insert_call(&head, "498282889876", 1000, 1980, 7, rate_root);
-
-        print_call_list(head, 0, 0);
-
-        rate_node *search_test = search_rate_tree(rate_root, "43664");
-
-        print_rate_node(search_test);
-
-        print_rate_node(rate_root);
-
-        printf("strcmp of the rate root code and 4380: %d\n", strcmp("4380", rate_root->region_code));
 
 
-        delete_call_list(&head);
-
-        traverse_rates_postorder(rate_tree_root, delete_rate_node);
-        rate_tree_root = NULL;
-
-        traverse_rates_postorder(rate_root, delete_rate_node);
-        rate_root = NULL;
+        
     #endif
 
-
+    traverse_rates_postorder(rate_root, delete_rate_node);
+    rate_root = NULL;
 
     return EXIT_SUCCESS;
 }

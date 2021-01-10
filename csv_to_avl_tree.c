@@ -105,9 +105,9 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 fprintf(stderr, "Call line %lu is empty\n", line_counter);
                 line_counter++;
                 continue;
-            }
+            }            
 
-            char *callee_number_token = strtok(csv_line, ","); //unsafe?
+            char *callee_number_token = strtok(NULL, ","); //unsafe?
             if (callee_number_token == NULL) {
                 fprintf(stderr, "Call line %lu is missing three arguments\n", line_counter);
                 line_counter++;
@@ -904,13 +904,11 @@ rate_node *search_rate_tree(rate_node *root, const char *region_code) {
     }
     
     if (root == NULL) {
-        printf("No match found for region code %s\n", region_code);
         return NULL;
     }
     
 
     if ((strcmp(region_code, root->region_code) == 0)) {
-        printf("Match found between region code %s and node with code %s\n", region_code, root->region_code);
         return root;
     }
     
@@ -958,9 +956,7 @@ user_node *add_user_node(user_node *node, const char *caller_number, char *calle
         // Inserting into the call linked list
         insert_call(&(temp_new_user_node->call_list_head), callee_number, duration, year, month, rate_root);
 
-
-        /******************************************************* TODO ****************************************************/
-        // calculate_user_stats(temp_new_user_node);
+        calculate_user_stats(temp_new_user_node);
 
         return temp_new_user_node;
     }
@@ -978,8 +974,7 @@ user_node *add_user_node(user_node *node, const char *caller_number, char *calle
         // Inserting into the call linked list
         insert_call(&(node->call_list_head), callee_number, duration, year, month, rate_root);
 
-        /******************************************************* TODO ****************************************************/
-        // calculate_user_stats(node);
+        calculate_user_stats(node);
 
         return node;
     }
@@ -1202,4 +1197,27 @@ int get_user_node_balance(user_node *node) {
         return 0;
     }
     return get_user_node_height(node->left) - get_user_node_height(node->right);    
+}
+
+void calculate_user_stats(user_node *user) {
+    if (user == NULL) {
+        fprintf(stderr, "Cannot calculate stats for NULL user, aborting\n");
+        return;
+    }
+
+    user->total_bill = 0;
+    user->total_call_duration = 0;
+    user->total_call_number = 0;
+
+    user_call_list *user_call_list_current = user->call_list_head;
+
+    while (user_call_list_current != NULL) {
+        user->total_bill += user_call_list_current->price;
+        user->total_call_duration += user_call_list_current->duration;
+        user->total_call_number++;
+
+        user_call_list_current = user_call_list_current->next;
+    }
+    
+    return;
 }
