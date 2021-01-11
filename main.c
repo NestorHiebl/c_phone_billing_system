@@ -51,7 +51,6 @@ int main(int argc, char **argv){
 
     // Push the second non-option argument into the call record variable
     getopt(argc, argv, "--");
-    printf("Optarg after second getopt call: %s\n", optarg);
     FILE *call_record = open_csv(optarg);
 
     if ((call_rates == NULL) || (call_record == NULL)) {

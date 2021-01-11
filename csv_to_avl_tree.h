@@ -164,13 +164,16 @@
 
         int add_user_call(user_node *user, const char *callee, size_t duration, double price, size_t year, size_t month);
 
+        void traverse_users_preorder(user_node *node, void (*visit) (user_node*));
         void traverse_users_inorder(user_node *node, void (*visit) (user_node*));
         void traverse_users_postorder(user_node *node, void (*visit) (user_node*));
         void print_user_node(user_node *node);
         void delete_user_node(user_node *node);
         
         void calculate_user_stats(user_node *user);
-        void generate_monthly_bill_files(user_node *bill);
-        void generate_monthly_cdr_files(user_node *bill);
+        void generate_monthly_bill_files(user_node *user);
+        void generate_monthly_cdr_files(user_node *user);
+
+        enum months { JANUARY = 1, FEBRUARY, MARCH, APRIL, MAY, JUNE, JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER };
 
 #endif

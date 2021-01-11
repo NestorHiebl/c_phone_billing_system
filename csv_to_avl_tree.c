@@ -1101,11 +1101,26 @@ user_node *left_rotate_user(user_node *node) {
 }
 
 /**
+ *      Traverse users preorder
+ *      @brief Traverses a given user tree preorder. Useful for generating the bill files.
+ *      
+ *      @param node The root of the tree.
+ *      @param visit The function to be performed upon visiting.
+ */
+void traverse_users_preorder(user_node *node, void (*visit) (user_node*)) {
+    if (node == NULL) return;
+
+    visit(node);
+    traverse_users_preorder(node, visit);
+    traverse_users_preorder(node, visit);
+}
+
+/**
  *      Traverse users inorder
  *      @brief Traverses a given user tree inorder. Useful for printing.
  *      
- *      @param node The root of the tree
- *      @param visit The function to be performed upon visiting
+ *      @param node The root of the tree.
+ *      @param visit The function to be performed upon visiting.
  */
 void traverse_users_inorder(user_node *node, void (*visit) (user_node*)) {
     if (node == NULL) return;
@@ -1199,6 +1214,13 @@ int get_user_node_balance(user_node *node) {
     return get_user_node_height(node->left) - get_user_node_height(node->right);    
 }
 
+/**
+ *      Calculate user stats
+ *      @brief Calculates the total bill, call duration and call number for a given user.
+ *      The appropriate parameters of the user node are automatically updated.
+ *      
+ *      @param user The user whose stats are to be calculated.
+ */
 void calculate_user_stats(user_node *user) {
     if (user == NULL) {
         fprintf(stderr, "Cannot calculate stats for NULL user, aborting\n");
@@ -1221,3 +1243,72 @@ void calculate_user_stats(user_node *user) {
     
     return;
 }
+
+void generate_monthly_cdr_files(user_node *user) {
+    // The current call being processed
+    user_call_list *current_user_call = user->call_list_head;
+
+    // The file the call is to be logged in
+    FILE *current_monthly_cdr_bill = NULL;
+
+    // Iterate through the call list, is jumped over if the call list is NULL
+    while (current_user_call != NULL) {
+        // Get new datetime every time a month has been concluded
+        size_t current_datetime = get_call_node_datetime(current_user_call);
+
+        // If the file from the previous month is still open, close it
+        if (current_monthly_cdr_bill != NULL) {
+            close_monthly_cdr_bill(current_monthly_cdr_bill);
+        }
+        
+        // Generate the filename for the current month
+        char *filename = generate_filename(user->number, current_datetime);
+
+        // Create a file for the current month
+        current_monthly_cdr_bill = open_monthly_cdr_bill(filename, "w");
+
+        // Keep writing to the same file until the call month changes
+        while (current_datetime == get_call_node_datetime(current_user_call)) {
+            // Censor callee number
+            char *callee_number_censored = censor_calee_numer(current_user_call->callee);
+
+            // Calculate call timecode
+            size_t call_seconds = calculate_call_seconds(current_user_call->duration);
+            size_t call_minutes = calculate_call_minutes(current_user_call->duration);
+            size_t call_hours = calculate_call_hours(current_user_call->duration);
+
+            // Print to the file
+            fprintf(current_monthly_cdr_bill, "%s, %s, %d : %d : %d, %d - %d - %d\n", 
+                        user->number, 
+                        callee_number_censored, 
+                        call_hours, 
+                        call_minutes, 
+                        call_seconds,
+                        current_user_call->year,
+                        current_user_call->month,
+
+                        // Big todo
+                        current_user_call.day);
+            
+            // If there is no next call, finish up file handling, free memory and exit the function.
+            if(current_user_call->next == NULL) {
+                if (current_monthly_cdr_bill != NULL) {
+                    close_monthly_cdr_bill(current_monthly_cdr_bill);
+                }
+                free(filename);
+                filename = NULL;
+                free(callee_number_censored);
+                callee_number_censored = NULL;
+
+                // Break to avoid segfault
+                return;
+            }
+            // Go to the next call
+            current_user_call = current_user_call->next;
+        }
+    }
+    fprintf(stderr, "Cannot generate monthly bills for user with no calls\n");
+    return;
+}
+
+// Todo: write generate filename and censor callee number functions that utilize malloc and return a pointer to the new memory block
