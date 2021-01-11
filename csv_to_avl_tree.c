@@ -1265,7 +1265,7 @@ void generate_monthly_cdr_files(user_node *user) {
         }
         
         // Generate the filename for the current month
-        char *filename = generate_filename(user->number, current_datetime);
+        char *filename = generate_cdr_filename(user->number, current_datetime);
 
         // Create a file for the current month
         current_monthly_cdr_bill = open_monthly_cdr_bill(filename, "w");
@@ -1274,7 +1274,6 @@ void generate_monthly_cdr_files(user_node *user) {
             exit(1);
         }
         
-
         // Keep writing to the same file until the call month changes
         while (current_datetime == get_call_node_datetime(current_user_call)) {
             // Censor callee number

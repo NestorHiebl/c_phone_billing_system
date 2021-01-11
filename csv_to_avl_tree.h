@@ -114,6 +114,12 @@
 
         rate_node *parse_rate_csv(FILE *filename);
         user_node *parse_call_csv(FILE *filename, rate_node *rate_root);
+
+
+            // TODO
+        char *generate_cdr_filename(char *user_number, size_t datetime);
+        FILE *open_monthly_cdr_bill(char *filename);
+        int close_monthly_cdr_bill(FILE *filepointer);
     
         // Pattern checking functions
 
@@ -123,7 +129,11 @@
 
         rate_node *search_by_longest_region_code_match(rate_node *root, const char *callee_number);
         
+            // TODO
         char *censor_calee_numer(char *callee_number);
+        size_t calculate_call_seconds(size_t duration);
+        size_t calculate_call_minutes(size_t duration);
+        size_t calculate_call_hours(size_t duration);
 
         int max(int a, int b);
 
