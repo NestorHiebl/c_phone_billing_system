@@ -146,9 +146,10 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
             *********************************************************/
             size_t year_token = 0;
             size_t month_token = 0;
+            size_t day_token = 0;
 
             // Needs to be tested
-            if ((sscanf(datetime_token, "%4lu-%2lu-%*d %*d:%*d:%*d", &year_token, &month_token)) != 2) {
+            if ((sscanf(datetime_token, "%4lu-%2lu-%2lu %*d:%*d:%*d", &year_token, &month_token, &day_token)) != 2) {
                 fprintf(stderr, "Error: Invalid date found on line %lu\n", line_counter);
                 line_counter++;
                 continue;
@@ -158,7 +159,7 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 continue;
             }
 
-            printf("Year: %lu, Month: %lu\n", year_token, month_token);
+            printf("Year: %lu, Month: %lu, Day: %lu\n", year_token, month_token, day_token);
             
 
 
@@ -169,7 +170,7 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 * The necesarry data has been collected, create the node *
                 *********************************************************/
                 
-                root = add_user_node(root, caller_number_token, callee_number_token, atoi(duration_token), year_token, month_token, rate_root);
+                root = add_user_node(root, caller_number_token, callee_number_token, atoi(duration_token), year_token, month_token, day_token, rate_root);
 
             } else {
                 printf("Invalid region_code found on call line %lu\n", line_counter);
@@ -468,7 +469,7 @@ int max(int a, int b) {
  *      @todo Insert node ordering mechanism
  *      @todo Censor the callee number
  */
-int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root) {
+int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root) {
 
     if (callee_number == NULL) {
         fprintf(stderr, "Callee number string empty, aborting\n");
@@ -493,6 +494,7 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
     new_node->duration = duration;
     new_node->year = year;
     new_node->month = month;
+    new_node->day = day;
 
     // Not yet tested!
     rate_node *longest_rate_match = search_by_longest_region_code_match(rate_root, callee_number);
@@ -943,7 +945,7 @@ rate_node *search_rate_tree(rate_node *root, const char *region_code) {
  * 
  *      @returns The tree's new root.
  */
-user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root) {
+user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root) {
     if (caller_number == NULL) {
         fprintf(stderr, "Number string empty, aborting\n");
         return NULL;
@@ -954,7 +956,7 @@ user_node *add_user_node(user_node *node, const char *caller_number, char *calle
         user_node *temp_new_user_node = make_user_node(caller_number);
 
         // Inserting into the call linked list
-        insert_call(&(temp_new_user_node->call_list_head), callee_number, duration, year, month, rate_root);
+        insert_call(&(temp_new_user_node->call_list_head), callee_number, duration, year, month, day, rate_root);
 
         calculate_user_stats(temp_new_user_node);
 
@@ -963,16 +965,16 @@ user_node *add_user_node(user_node *node, const char *caller_number, char *calle
 
     if (strcmp(caller_number, node->number) < 0) {
         // Going left
-        node->left = add_user_node(node->left, caller_number, callee_number, duration, year, month, rate_root);
+        node->left = add_user_node(node->left, caller_number, callee_number, duration, year, month, day, rate_root);
     } else if (strcmp(caller_number, node->number) > 0) {
         // Going right
-        node->right = add_user_node(node->right, caller_number, callee_number, duration, year, month, rate_root);
+        node->right = add_user_node(node->right, caller_number, callee_number, duration, year, month, day, rate_root);
     } else {
         // The user already has a node - in this case we just want to add to their call data linked list
         printf("User present in tree, appending call data\n");
 
         // Inserting into the call linked list
-        insert_call(&(node->call_list_head), callee_number, duration, year, month, rate_root);
+        insert_call(&(node->call_list_head), callee_number, duration, year, month, day, rate_root);
 
         calculate_user_stats(node);
 
@@ -1259,6 +1261,7 @@ void generate_monthly_cdr_files(user_node *user) {
         // If the file from the previous month is still open, close it
         if (current_monthly_cdr_bill != NULL) {
             close_monthly_cdr_bill(current_monthly_cdr_bill);
+            current_monthly_cdr_bill = NULL;
         }
         
         // Generate the filename for the current month
@@ -1266,6 +1269,11 @@ void generate_monthly_cdr_files(user_node *user) {
 
         // Create a file for the current month
         current_monthly_cdr_bill = open_monthly_cdr_bill(filename, "w");
+        if (current_monthly_cdr_bill == NULL) {
+            fprintf(stderr, "Opening file \"%s\" has failed, aborting program\n", filename);
+            exit(1);
+        }
+        
 
         // Keep writing to the same file until the call month changes
         while (current_datetime == get_call_node_datetime(current_user_call)) {
@@ -1286,19 +1294,19 @@ void generate_monthly_cdr_files(user_node *user) {
                         call_seconds,
                         current_user_call->year,
                         current_user_call->month,
+                        current_user_call->day);
 
-                        // Big todo
-                        current_user_call.day);
+            // None of these memory blocks are needed at this point
+            free(filename);
+            filename = NULL;
+            free(callee_number_censored);
+            callee_number_censored = NULL;
             
-            // If there is no next call, finish up file handling, free memory and exit the function.
+            // If there is no next call, finish up file handling and exit the function.
             if(current_user_call->next == NULL) {
                 if (current_monthly_cdr_bill != NULL) {
                     close_monthly_cdr_bill(current_monthly_cdr_bill);
                 }
-                free(filename);
-                filename = NULL;
-                free(callee_number_censored);
-                callee_number_censored = NULL;
 
                 // Break to avoid segfault
                 return;

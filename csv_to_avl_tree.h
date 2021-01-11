@@ -41,6 +41,7 @@
 
             size_t year;
             size_t month;
+            size_t day;
 
             struct user_call_list  *previous;
             struct user_call_list *next;
@@ -128,7 +129,7 @@
 
         // Call linked list functions
 
-        int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root);
+        int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root);
         void print_call_list(user_call_list *head, size_t start_index, size_t end_index);
         int delete_call_list(user_call_list **head);
         size_t get_call_node_datetime(user_call_list *node);
@@ -153,7 +154,7 @@
         
         // User AVL Tree functions
 
-        user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, rate_node *rate_root);
+        user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root);
         user_node *make_user_node(const char *number);
         
         int get_user_node_height(user_node *node);
