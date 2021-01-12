@@ -1,3 +1,5 @@
 main
 *.o
 tempCodeRunnerFile.c
+tempCodeRunnerFile.h
+*.txt

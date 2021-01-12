@@ -74,12 +74,15 @@ int main(int argc, char **argv){
 
     #ifdef DEBUG
 
-    print_call_list(user_root->call_list_head, 0, 0);    
+        char *censor_test = censor_calee_number("123456789");
+    
+        printf("Censor callee number test: %s\n", censor_test);
+        free(censor_test); censor_test = NULL;
 
+        user_node *test_user_node = user_root;
 
+        generate_monthly_cdr_files(test_user_node);
 
-
-        
     #endif
 
     traverse_rates_postorder(rate_root, delete_rate_node);

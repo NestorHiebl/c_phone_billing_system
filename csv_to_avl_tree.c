@@ -149,7 +149,7 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
             size_t day_token = 0;
 
             // Needs to be tested
-            if ((sscanf(datetime_token, "%4lu-%2lu-%2lu %*d:%*d:%*d", &year_token, &month_token, &day_token)) != 2) {
+            if ((sscanf(datetime_token, "%4lu-%2lu-%2lu %*d:%*d:%*d", &year_token, &month_token, &day_token)) != 3) {
                 fprintf(stderr, "Error: Invalid date found on line %lu\n", line_counter);
                 line_counter++;
                 continue;
@@ -278,7 +278,7 @@ rate_node *parse_rate_csv(FILE *filename) {
                 root = add_rate_node(root, region_code_token, rate_token_d);
 
             } else {
-                printf("Invalid region_code found on line %lu\n", line_counter);
+                printf("Invalid region code found on line %lu\n", line_counter);
                 line_counter++;
                 continue;
             }
@@ -293,7 +293,48 @@ rate_node *parse_rate_csv(FILE *filename) {
     return root;
 }
 
+char *generate_cdr_filename(char *user_number, size_t datetime) {
+    size_t month = datetime % 100;
+    size_t year = (datetime - month) / 100;
 
+    if ((month > 12) || (year < TELEPHONE_INVENTION_YEAR) || (year > CURRENT_YEAR)) {
+        fprintf(stderr, "Invalid date found in cdr filename generator\n");
+        return NULL;
+    }    
+
+    char *cdr_filename = malloc(strlen(user_number) + 15 /* 13 bytes are necessarry, 15 for extra breathing room*/);
+    if (cdr_filename == NULL) {
+        fprintf(stderr, "Failed to allocate memory for cdr filename\n");
+        return NULL;
+    }
+    
+    sprintf(cdr_filename, "%s-%lu-%lu-cdr.txt", user_number, month, year);
+
+    return cdr_filename;
+}
+
+FILE *open_monthly_cdr_bill(char *filename) {
+    FILE *cdr_bill = fopen(filename, "w");
+    if (cdr_bill == NULL) {
+        fprintf(stderr, "Could not open file \"%s\", aborting\n", filename);
+        return NULL;
+    }
+    return cdr_bill;    
+}
+
+
+int close_monthly_cdr_bill(FILE *filepointer) {
+    if (fflush(filepointer) != 0) {
+        fprintf(stderr, "Flushing cdr file failed, aborting\n");
+        return 0;
+    }
+
+    if (fclose(filepointer) != 0) {
+        fprintf(stderr, "Closing cdr file failed, aborting\n");
+        return 0;
+    }
+    return 1;
+}
 
 /*****************************************************************************************************************
  * PATTERN CHECKING FUNCTIONS                                                                                    *
@@ -331,6 +372,29 @@ char *validate_phone_number(char **phone_number) {
     }
 
     return legal ? *phone_number : NULL;    
+}
+
+char *censor_calee_number(const char *callee_number) {
+    size_t callee_number_len = strlen(callee_number);
+
+    if (callee_number_len < 3) {
+        fprintf(stderr, "Calle number \"%s\" too short to be censored\n", callee_number);
+        return NULL;
+    }
+
+    char *callee_number_censored = malloc(callee_number_len + 1);
+    if (callee_number_censored == NULL) {
+        fprintf(stderr, "Couldn't allocate memory for censoring a phone number\n");
+        return NULL;
+    }
+    
+    strcpy(callee_number_censored, callee_number);
+
+    for (size_t i = callee_number_len - 3; i < callee_number_len; i++) {
+        *(callee_number_censored + i) = '*';
+    }
+    
+    return callee_number_censored;
 }
 
 /**
@@ -432,6 +496,18 @@ rate_node *search_by_longest_region_code_match(rate_node *root, const char *call
     if (current_longest_match == NULL) printf("No match found for callee number \"%s\", aborting search\n", callee_number);
     
     return current_longest_match;
+}
+
+size_t calculate_call_seconds(size_t duration) {
+    return duration % 60;
+}
+
+size_t calculate_call_minutes(size_t duration) {
+    return (duration - (3600 * (duration / 3600))) / 60;
+}
+
+size_t calculate_call_hours(size_t duration) {
+    return duration / 3600;
 }
 
 /**
@@ -1242,7 +1318,6 @@ void calculate_user_stats(user_node *user) {
 
         user_call_list_current = user_call_list_current->next;
     }
-    
     return;
 }
 
@@ -1268,7 +1343,7 @@ void generate_monthly_cdr_files(user_node *user) {
         char *filename = generate_cdr_filename(user->number, current_datetime);
 
         // Create a file for the current month
-        current_monthly_cdr_bill = open_monthly_cdr_bill(filename, "w");
+        current_monthly_cdr_bill = open_monthly_cdr_bill(filename);
         if (current_monthly_cdr_bill == NULL) {
             fprintf(stderr, "Opening file \"%s\" has failed, aborting program\n", filename);
             exit(1);
@@ -1277,7 +1352,7 @@ void generate_monthly_cdr_files(user_node *user) {
         // Keep writing to the same file until the call month changes
         while (current_datetime == get_call_node_datetime(current_user_call)) {
             // Censor callee number
-            char *callee_number_censored = censor_calee_numer(current_user_call->callee);
+            char *callee_number_censored = censor_calee_number(current_user_call->callee);
 
             // Calculate call timecode
             size_t call_seconds = calculate_call_seconds(current_user_call->duration);
@@ -1285,7 +1360,7 @@ void generate_monthly_cdr_files(user_node *user) {
             size_t call_hours = calculate_call_hours(current_user_call->duration);
 
             // Print to the file
-            fprintf(current_monthly_cdr_bill, "%s, %s, %d : %d : %d, %d - %d - %d\n", 
+            fprintf(current_monthly_cdr_bill, "%s, %s, %ld : %ld : %ld, %ld - %ld - %ld\n", 
                         user->number, 
                         callee_number_censored, 
                         call_hours, 

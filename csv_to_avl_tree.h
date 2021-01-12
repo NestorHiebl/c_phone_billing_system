@@ -130,7 +130,7 @@
         rate_node *search_by_longest_region_code_match(rate_node *root, const char *callee_number);
         
             // TODO
-        char *censor_calee_numer(char *callee_number);
+        char *censor_calee_number(const char *callee_number);
         size_t calculate_call_seconds(size_t duration);
         size_t calculate_call_minutes(size_t duration);
         size_t calculate_call_hours(size_t duration);
