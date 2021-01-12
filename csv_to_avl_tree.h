@@ -27,8 +27,9 @@
          *      @param duration The duration of the call.
          *      @param price The call price in @c double format. Calculated from the duration and the appropriate node in the rate linked list.
          * 
-         *      @param year The year the call was made in.
-         *      @param month The month the call was made in.
+         *      @param year The year the call took place in.
+         *      @param month The month the call took place in.
+         *      @param day The day the call took place on.
          * 
          *      @param previous The previous node. @c NULL for the head node.
          *      @param next The next node. @c NULL for the tail node.      

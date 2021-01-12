@@ -40,7 +40,6 @@ FILE *open_csv(const char* filename){
         printf("Filename invalid, aborting\n");
         return NULL;
     }
-    
     return csv;
 }
 
@@ -70,7 +69,21 @@ int close_csv(FILE *filepointer) {
     return 1;
 }
 
-
+/**
+ *      Parse call csv
+ * 
+ *      The iterative logic for parsing rows and fields is based on @c fgets , @c strtok and @c sscanf , respectfully.
+ *      Potential error scenarions are:
+ *      @li A row in the csv is longer than 1024 characters. The function will notify you, but won't attempt to salvage the row.
+ *      @li A field is missing. Strtok ignores consecutive delimiters, so any rows with NaN fields will be discarded.
+ *      @li A datetime field is formatted incorrectly. The proper format is @c yyyy-mm-dd @c hh:mm:ss .
+ * 
+ *      @brief Builds a full user avl tree with a call linked list starting at each node list based on a csv file pointer.
+ *      
+ *      @param filename The @c FILE pointer for the csv.
+ * 
+ *      @returns A pointer to the root of the generated avl tree.
+ */
 user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
 
     char csv_line[1024];
@@ -100,14 +113,14 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 continue;
             } 
                 
-            char *caller_number_token = strtok(csv_line, ","); //unsafe?
+            char *caller_number_token = strtok(csv_line, ",");
             if (caller_number_token == NULL) {
                 fprintf(stderr, "Call line %lu is empty\n", line_counter);
                 line_counter++;
                 continue;
             }            
 
-            char *callee_number_token = strtok(NULL, ","); //unsafe?
+            char *callee_number_token = strtok(NULL, ",");
             if (callee_number_token == NULL) {
                 fprintf(stderr, "Call line %lu is missing three arguments\n", line_counter);
                 line_counter++;
@@ -137,18 +150,11 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
 
             caller_number_token = validate_phone_number(&caller_number_token);
             callee_number_token = validate_phone_number(&callee_number_token);
-
-            
-
-
-            /*********************************************************
-            * Year and month extraction algorithm goes here          *
-            *********************************************************/
             size_t year_token = 0;
             size_t month_token = 0;
             size_t day_token = 0;
 
-            // Needs to be tested
+            // Date extraction happens here
             if ((sscanf(datetime_token, "%4lu-%2lu-%2lu %*d:%*d:%*d", &year_token, &month_token, &day_token)) != 3) {
                 fprintf(stderr, "Error: Invalid date found on line %lu\n", line_counter);
                 line_counter++;
@@ -160,9 +166,6 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
             }
 
             printf("Year: %lu, Month: %lu, Day: %lu\n", year_token, month_token, day_token);
-            
-
-
             
             if ((caller_number_token != NULL) && (callee_number_token != NULL)) {
                 
@@ -196,11 +199,11 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
  *      @li A row in the csv is longer than 1024 characters. The function will notify you, but won't attempt to salvage the row.
  *      @li A field is missing. Strtok ignores consecutive delimiters, so any rows with NaN fields will be discarded.
  * 
- *      @brief Builds a full rate linked list based on a csv file pointer
+ *      @brief Builds a full rate avl tree based on a csv file pointer.
  *      
- *      @param filename The @c FILE pointer for the csv
+ *      @param filename The @c FILE pointer for the csv.
  * 
- *      @returns A pointer to the head of the generated linked list. Note that no tail is provided.
+ *      @returns A pointer to the root of the generated avl tree.
  */
 rate_node *parse_rate_csv(FILE *filename) {
 
@@ -231,7 +234,7 @@ rate_node *parse_rate_csv(FILE *filename) {
                 continue;
             } 
                 
-            char *region_code_token = strtok(csv_line, ","); //unsafe?
+            char *region_code_token = strtok(csv_line, ",");
             if (region_code_token == NULL) {
                 fprintf(stderr, "Line %lu is empty\n", line_counter);
                 line_counter++;
@@ -368,8 +371,13 @@ int close_monthly_cdr_bill(FILE *filepointer) {
  * PATTERN CHECKING FUNCTIONS                                                                                    *
  *****************************************************************************************************************/
 
-// TODO ///////////////////////////////////////////////////////////////////////////////////////////////
-
+/**
+ *      Validate phone number
+ *      @brief Checks if a phone number is legal based on E.164 and removes leading zeros.
+ *      
+ *      @param phone_number The number to be checked.
+ *      @return A pointer to the validated number or NULL if it was found to be invalid.
+ */
 char *validate_phone_number(char **phone_number) {
     if (*phone_number == NULL) {
         fprintf(stderr, "Cannot validate NULL string\n");
@@ -382,7 +390,7 @@ char *validate_phone_number(char **phone_number) {
 
     size_t phone_number_len = strlen(*phone_number);
 
-    if (phone_number_len > 15 /****************** need actual value **********************/) {
+    if (phone_number_len > 15 /* Should be correct according to E.164 */) {
         fprintf(stderr, "Phone number too long, aborting\n");
         return NULL;
     }
@@ -688,6 +696,13 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
     return 0;
 }
 
+/**
+ *      Get call node datetime
+ *      @brief Get the call node datetime.
+ *      
+ *      @param node The call whose datetime is to be returned.
+ *      @return The year of the call multiplied by 100 plus the month of the call.
+ */
 size_t get_call_node_datetime(user_call_list *node) {
     return (node == NULL) ? 0 : (node->year * 100) + node->month;
 }
@@ -1029,8 +1044,6 @@ int get_rate_node_balance(rate_node *node) {
  *      @param root The root of the tree to be searched.
  *      @param region_code The region code to search for. Cannot be @c NULL .
  *      @return The rate node with the appropriate region code, or @c NULL if no node was found.
- * 
- *      @todo Test this function
  */
 rate_node *search_rate_tree(rate_node *root, const char *region_code) {
     if (region_code == NULL) {
@@ -1378,6 +1391,12 @@ void calculate_user_stats(user_node *user) {
     return;
 }
 
+/**
+ *      Generate monthly cdr files
+ *      @brief Generate the cdr record files for a given user. The user's call record linked list is iterated through for data.
+ *      
+ *      @param user The user for whom records are to be generated.
+ */
 void generate_monthly_cdr_files(user_node *user) {
     // The current call being processed
     user_call_list *current_user_call = user->call_list_head;
@@ -1417,7 +1436,7 @@ void generate_monthly_cdr_files(user_node *user) {
             size_t call_hours = calculate_call_hours(current_user_call->duration);
 
             // Print to the file
-            fprintf(current_monthly_cdr_bill, "%s, %s, %ld : %ld : %ld, %ld - %ld - %ld\n", 
+            fprintf(current_monthly_cdr_bill, "%s, %s, %ld:%ld:%ld, %ld-%ld-%ld\n", 
                         user->number, 
                         callee_number_censored, 
                         call_hours, 

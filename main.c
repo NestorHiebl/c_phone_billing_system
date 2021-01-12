@@ -68,6 +68,8 @@ int main(int argc, char **argv){
     close_csv(call_rates);
     close_csv(call_record);
 
+    // Calculate stats for all users
+    traverse_users_preorder(user_root, calculate_user_stats);
     
 
     printf("%li, %li, %f\n", total_call_number, total_call_duration, total_call_price);
