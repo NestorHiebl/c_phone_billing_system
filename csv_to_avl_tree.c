@@ -293,6 +293,16 @@ rate_node *parse_rate_csv(FILE *filename) {
     return root;
 }
 
+
+/**
+ *      Generate cdr filename
+ *      @brief Generates a filename for a user's monthly cdr record basen on the user's number and the year and month.
+ *      Note that the returned filename is in a memory block that needs to be freed manually.
+ *      
+ *      @param user_number The user's number in @c string format.
+ *      @param datetime The year of the record multiplied by 100, plus the month of the record.
+ *      @return The filename or @c NULL if the function failed.
+ */
 char *generate_cdr_filename(char *user_number, size_t datetime) {
     size_t month = datetime % 100;
     size_t year = (datetime - month) / 100;
@@ -313,6 +323,13 @@ char *generate_cdr_filename(char *user_number, size_t datetime) {
     return cdr_filename;
 }
 
+/**
+ *      Open monthly cdr bill
+ *      @brief Opens a cdr file in write mode based on a filename.
+ *      
+ *      @param filename The filename of the cdr record to be opened.
+ *      @return A file pointer to the file if successfull, otherwise @c NULL .
+ */
 FILE *open_monthly_cdr_bill(char *filename) {
     FILE *cdr_bill = fopen(filename, "w");
     if (cdr_bill == NULL) {
@@ -322,8 +339,19 @@ FILE *open_monthly_cdr_bill(char *filename) {
     return cdr_bill;    
 }
 
-
+/**
+ *      Close monthly cdr bill
+ *      @brief Close a file pointer to a cdr record file.
+ *      
+ *      @param filepointer The file to be closed.
+ *      @return 1 if successfull, 0 if not.
+ */
 int close_monthly_cdr_bill(FILE *filepointer) {
+    if (filepointer == NULL) {
+        fprintf(stderr, "Cannot close NULL pointer\n");
+        return 0;
+    }
+    
     if (fflush(filepointer) != 0) {
         fprintf(stderr, "Flushing cdr file failed, aborting\n");
         return 0;
@@ -374,11 +402,19 @@ char *validate_phone_number(char **phone_number) {
     return legal ? *phone_number : NULL;    
 }
 
+/**
+ *      Censor callee number
+ *      @brief Replaces the final three digits of a phone number with '*'.
+ *      Note that the censored number is in a new memory block that needs to be freed.
+ *      
+ *      @param callee_number The number to be cenosored
+ *      @return A pointer to the censored number or @c NULL if the function failed.
+ */
 char *censor_calee_number(const char *callee_number) {
     size_t callee_number_len = strlen(callee_number);
 
     if (callee_number_len < 3) {
-        fprintf(stderr, "Calle number \"%s\" too short to be censored\n", callee_number);
+        fprintf(stderr, "Callee number \"%s\" too short to be censored\n", callee_number);
         return NULL;
     }
 
@@ -498,14 +534,35 @@ rate_node *search_by_longest_region_code_match(rate_node *root, const char *call
     return current_longest_match;
 }
 
+/**
+ *      Calculate call seconds
+ *      @brief Calculate the second component of a call's duration.
+ *      
+ *      @param duration The duration of a call.
+ *      @return The second component of a call.
+ */
 size_t calculate_call_seconds(size_t duration) {
     return duration % 60;
 }
 
+/**
+ *      Calculate call minutes
+ *      @brief Calculate the minute component of a call's duration.
+ *      
+ *      @param duration The duration of a call.
+ *      @return The minute component of a call.
+ */
 size_t calculate_call_minutes(size_t duration) {
     return (duration - (3600 * (duration / 3600))) / 60;
 }
 
+/**
+ *      Calculate call hours
+ *      @brief Calculate the hour component of a call's duration.
+ *      
+ *      @param duration The duration of a call.
+ *      @return The hour component of a call.
+ */
 size_t calculate_call_hours(size_t duration) {
     return duration / 3600;
 }
@@ -1392,5 +1449,3 @@ void generate_monthly_cdr_files(user_node *user) {
     fprintf(stderr, "Cannot generate monthly bills for user with no calls\n");
     return;
 }
-
-// Todo: write generate filename and censor callee number functions that utilize malloc and return a pointer to the new memory block
