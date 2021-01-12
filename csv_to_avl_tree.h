@@ -117,6 +117,7 @@
         user_node *parse_call_csv(FILE *filename, rate_node *rate_root);
 
         char *generate_cdr_filename(char *user_number, size_t datetime);
+        char *generate_monthly_bill_filename(char *user_number, size_t datetime);
         FILE *open_monthly_cdr_bill(char *filename);
         int close_monthly_cdr_bill(FILE *filepointer);
     

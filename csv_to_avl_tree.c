@@ -299,7 +299,7 @@ rate_node *parse_rate_csv(FILE *filename) {
 
 /**
  *      Generate cdr filename
- *      @brief Generates a filename for a user's monthly cdr record basen on the user's number and the year and month.
+ *      @brief Generates a filename for a user's monthly cdr record based on the user's number and the year and month.
  *      Note that the returned filename is in a memory block that needs to be freed manually.
  *      
  *      @param user_number The user's number in @c string format.
@@ -324,6 +324,35 @@ char *generate_cdr_filename(char *user_number, size_t datetime) {
     sprintf(cdr_filename, "%s-%lu-%lu-cdr.txt", user_number, month, year);
 
     return cdr_filename;
+}
+
+/**
+ *      Generate monthly bill filename
+ *      @brief Generates a filename for a user's monthly bill based on the user's number and the year and month.
+ *      Note that the returned filename is in a memory block that needs to be freed manually.
+ *      
+ *      @param user_number The user's number in @c string format.
+ *      @param datetime The year of the record multiplied by 100, plus the month of the record.
+ *      @return The filename or @c NULL if the function failed.
+ */
+char *generate_monthly_bill_filename(char *user_number, size_t datetime) {
+    size_t month = datetime % 100;
+    size_t year = (datetime - month) / 100;
+
+    if ((month > 12) || (year < TELEPHONE_INVENTION_YEAR) || (year > CURRENT_YEAR)) {
+        fprintf(stderr, "Invalid date found in cdr filename generator\n");
+        return NULL;
+    }
+
+    char *monthly_bill_filename = malloc(strlen(user_number) + 11 /* 9 bytes are necessarry, 11 for extra breathing room*/);
+    if (monthly_bill_filename == NULL) {
+        fprintf(stderr, "Failed to allocate memory for montly bill filename\n");
+        return NULL;
+    }
+
+    sprintf(monthly_bill_filename, "%s-%lu-%lu.txt");
+
+    return monthly_bill_filename;
 }
 
 /**
@@ -511,7 +540,6 @@ char *validate_rate(char *rate){
  *      @param callee_number The number whose longest region code match is to be found.
  *      @return The rate node with the longest match, or @c NULL if no matches have been found.
  * 
- *      @todo Test this function.
  */
 rate_node *search_by_longest_region_code_match(rate_node *root, const char *callee_number) {
     if (callee_number == NULL) {
@@ -606,9 +634,6 @@ int max(int a, int b) {
  *      @param rate_root The root of the rate AVL tree in which the relevant region codes are stored.
  * 
  *      @returns 1 if the function suceeds, 0 if it fails.
- * 
- *      @todo Insert node ordering mechanism
- *      @todo Censor the callee number
  */
 int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root) {
 
@@ -657,7 +682,6 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
     } else {
         // The node is being appended to an existing list
         
-
         if (get_call_node_datetime(new_node) <= get_call_node_datetime(*head)) {
             // The new node comes before root
             new_node->next = *head;
@@ -1087,8 +1111,6 @@ rate_node *search_rate_tree(rate_node *root, const char *region_code) {
  *      @param month The month the call took place in.
  *      @param rate_root The root of the rate tree that the rate plans are stored in.
  * 
- *      @todo Add calls to the appropriate call linked list functions
- * 
  *      @returns The tree's new root.
  */
 user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root) {
@@ -1467,4 +1489,108 @@ void generate_monthly_cdr_files(user_node *user) {
     }
     fprintf(stderr, "Cannot generate monthly bills for user with no calls\n");
     return;
+}
+
+void generate_monthly_bill_files(user_node *user) {
+    // The current call being processed
+    user_call_list *current_user_call = user->call_list_head;
+
+    // The file the call is to be logged in
+    FILE *current_monthly_bill = NULL;
+
+    while (current_user_call != NULL) {
+        size_t current_datetime = get_call_node_datetime(current_user_call);
+
+        if (current_monthly_bill != NULL) {
+            close_monthly_cdr_bill(current_monthly_bill);
+            current_monthly_bill = NULL;
+        }
+
+        size_t total_monthly_calls = 0;
+        size_t total_monthly_duration = 0;
+        double total_mothly_bill = 0;
+
+        while (current_datetime == get_call_node_datetime(current_user_call)) {
+            // Calculate monthly stats here
+            total_monthly_calls++;
+            total_monthly_duration += current_user_call->duration;
+            total_mothly_bill += current_user_call->price;
+
+            if (current_user_call->next == NULL) {
+                // Set exit flag after the current bill
+                current_user_call = current_user_call->next;
+                break;
+            }
+            current_user_call = current_user_call->next;
+        }
+
+        // File and file contents generated here
+
+        size_t month = current_datetime % 100;
+
+        char month_string[20];
+
+        switch (month) {
+            case JANUARY:
+                strcpy(month_string, "January");
+                break;
+            case FEBRUARY:
+                strcpy(month_string, "February");
+                break;
+            case MARCH:
+                strcpy(month_string, "March");
+                break;
+            case APRIL:
+                strcpy(month_string, "April");
+                break;
+            case MAY:
+                strcpy(month_string, "May");
+                break;
+            case JUNE:
+                strcpy(month_string, "June");
+                break;
+            case JULY:
+                strcpy(month_string, "July");
+                break;
+            case AUGUST:
+                strcpy(month_string, "August");
+                break;
+            case SEPTEMBER:
+                strcpy(month_string, "September");
+                break;
+            case OCTOBER:
+                strcpy(month_string, "October");
+                break;
+            case NOVEMBER:
+                strcpy(month_string, "November");
+                break;
+            case DECEMBER:
+                strcpy(month_string, "December");
+                break;
+            default:
+                fprintf(stderr, "Error: Illegal month found, aborting\n");
+                exit(1);
+                break;
+        }
+        // Calculate call timecode
+        size_t total_call_seconds = calculate_call_seconds(total_monthly_duration);
+        size_t total_call_minutes = calculate_call_minutes(total_monthly_duration);
+        size_t total_call_hours = calculate_call_hours(total_monthly_duration);
+
+        char *filename = generate_monthly_bill_filename(user->number, current_datetime);
+
+        current_monthly_bill = open_monthly_cdr_bill(filename);
+
+        fprintf(current_monthly_bill,   "Invoice for %s for Subscriber %s\n"
+                                        "Calls: %lu\n"
+                                        "Duration: %lu:%lu:%lu\n"
+                                        "Price: %.2f €", 
+                                        month_string, user->number,
+                                        total_monthly_calls,
+                                        total_call_hours, total_call_minutes, total_call_seconds,
+                                        total_mothly_bill);
+
+        free(filename);
+    }
+    
 }
