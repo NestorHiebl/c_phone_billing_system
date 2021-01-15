@@ -100,7 +100,6 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
             if (((csv_line[strlen(csv_line) - 1]) == '\n')) {
 
                 // Remove the trailing newline from the csv row
-                printf("Call line ended\n");
                 csv_line[strlen(csv_line) - 1] = '\0';
                 
             } else if (feof(filename)) {
@@ -165,7 +164,7 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 continue;
             }
 
-            printf("Year: %lu, Month: %lu, Day: %lu\n", year_token, month_token, day_token);
+            // printf("Year: %lu, Month: %lu, Day: %lu\n", year_token, month_token, day_token);
             
             if ((caller_number_token != NULL) && (callee_number_token != NULL)) {
                 
@@ -221,7 +220,6 @@ rate_node *parse_rate_csv(FILE *filename) {
             if (((csv_line[strlen(csv_line) - 1]) == '\n')) {
 
                 // Remove the trailing newline from the csv row
-                printf("Line ended\n");
                 csv_line[strlen(csv_line) - 1] = '\0';
                 
             } else if (feof(filename)) {
@@ -315,7 +313,7 @@ char *generate_cdr_filename(char *user_number, size_t datetime) {
         return NULL;
     }    
 
-    char *cdr_filename = malloc(strlen(user_number) + 15 /* 13 bytes are necessarry, 15 for extra breathing room*/);
+    char *cdr_filename = malloc(strlen(user_number) + 20 /* 13 bytes are necessarry, 15 for extra breathing room*/);
     if (cdr_filename == NULL) {
         fprintf(stderr, "Failed to allocate memory for cdr filename\n");
         return NULL;
@@ -350,7 +348,7 @@ char *generate_monthly_bill_filename(char *user_number, size_t datetime) {
         return NULL;
     }
 
-    sprintf(monthly_bill_filename, "%s-%lu-%lu.txt");
+    sprintf(monthly_bill_filename, "%s-%lu-%lu.txt", user_number, month, year);
 
     return monthly_bill_filename;
 }
@@ -1139,7 +1137,7 @@ user_node *add_user_node(user_node *node, const char *caller_number, char *calle
         node->right = add_user_node(node->right, caller_number, callee_number, duration, year, month, day, rate_root);
     } else {
         // The user already has a node - in this case we just want to add to their call data linked list
-        printf("User present in tree, appending call data\n");
+        // printf("User present in tree, appending call data\n");
 
         // Inserting into the call linked list
         insert_call(&(node->call_list_head), callee_number, duration, year, month, day, rate_root);
@@ -1281,8 +1279,8 @@ void traverse_users_preorder(user_node *node, void (*visit) (user_node*)) {
     if (node == NULL) return;
 
     visit(node);
-    traverse_users_preorder(node, visit);
-    traverse_users_preorder(node, visit);
+    traverse_users_preorder(node->left, visit);
+    traverse_users_preorder(node->right, visit);
 }
 
 /**
@@ -1458,7 +1456,7 @@ void generate_monthly_cdr_files(user_node *user) {
             size_t call_hours = calculate_call_hours(current_user_call->duration);
 
             // Print to the file
-            fprintf(current_monthly_cdr_bill, "%s, %s, %ld:%ld:%ld, %ld-%ld-%ld\n", 
+            fprintf(current_monthly_cdr_bill, "%s, %s, %ld:%02ld:%02ld, %ld-%ld-%ld\n", 
                         user->number, 
                         callee_number_censored, 
                         call_hours, 
@@ -1491,6 +1489,9 @@ void generate_monthly_cdr_files(user_node *user) {
     return;
 }
 
+
+
+// Segfault somewehere in here
 void generate_monthly_bill_files(user_node *user) {
     // The current call being processed
     user_call_list *current_user_call = user->call_list_head;
@@ -1499,6 +1500,7 @@ void generate_monthly_bill_files(user_node *user) {
     FILE *current_monthly_bill = NULL;
 
     while (current_user_call != NULL) {
+
         size_t current_datetime = get_call_node_datetime(current_user_call);
 
         if (current_monthly_bill != NULL) {
@@ -1583,7 +1585,7 @@ void generate_monthly_bill_files(user_node *user) {
 
         fprintf(current_monthly_bill,   "Invoice for %s for Subscriber %s\n"
                                         "Calls: %lu\n"
-                                        "Duration: %lu:%lu:%lu\n"
+                                        "Duration: %lu:%02lu:%02lu\n"
                                         "Price: %.2f €", 
                                         month_string, user->number,
                                         total_monthly_calls,
@@ -1592,5 +1594,4 @@ void generate_monthly_bill_files(user_node *user) {
 
         free(filename);
     }
-    
 }
