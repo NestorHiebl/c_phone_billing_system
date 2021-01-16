@@ -353,7 +353,7 @@ char *generate_monthly_bill_filename(char *user_number, size_t datetime) {
         return NULL;
     }
 
-    char *monthly_bill_filename = malloc(strlen(user_number) + 11 /* 9 bytes are necessarry, 11 for extra breathing room*/);
+    char *monthly_bill_filename = malloc(strlen(user_number) + 20 /* 9 bytes are necessarry, 20 for extra breathing room*/);
     if (monthly_bill_filename == NULL) {
         fprintf(stderr, "Failed to allocate memory for montly bill filename\n");
         return NULL;
@@ -658,7 +658,7 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
     }
 
     // Initialize callee number
-    new_node->callee = malloc(sizeof(callee_number));
+    new_node->callee = malloc(strlen(callee_number) + 1);
     if (new_node->callee == NULL) {
         fprintf(stderr, "Not enough memory to initialize callee number\n");
         return 0;
@@ -916,7 +916,7 @@ rate_node *make_rate_node(const char *region_code, double rate) {
         return NULL;
     }
     
-    newNode->region_code = malloc(sizeof(region_code));
+    newNode->region_code = malloc(strlen(region_code) + 1);
     if (newNode->region_code == NULL) {
         fprintf(stderr, "Not enough memory to initialize region code field, aborting\n");
         free(newNode);
@@ -1213,7 +1213,7 @@ user_node *make_user_node(const char *caller_number) {
         return NULL;
     }
     
-    newNode->number = malloc(sizeof(caller_number));
+    newNode->number = malloc(strlen(caller_number) + 1);
     if (newNode->number == NULL) {
         fprintf(stderr, "Not enough memory to initialize caller number field, aborting\n");
         free(newNode);
@@ -1515,11 +1515,6 @@ void generate_monthly_bill_files(user_node *user) {
 
         size_t current_datetime = get_call_node_datetime(current_user_call);
 
-        if (current_monthly_bill != NULL) {
-            close_monthly_cdr_bill(current_monthly_bill);
-            current_monthly_bill = NULL;
-        }
-
         size_t total_monthly_calls = 0;
         size_t total_monthly_duration = 0;
         double total_mothly_bill = 0;
@@ -1591,7 +1586,6 @@ void generate_monthly_bill_files(user_node *user) {
         size_t total_call_minutes = calculate_call_minutes(total_monthly_duration);
         size_t total_call_hours = calculate_call_hours(total_monthly_duration);
 
-        // !!!!!!!!!!!!
         char *filename = generate_monthly_bill_filename(user->number, current_datetime);
 
         current_monthly_bill = open_monthly_cdr_bill(filename);
@@ -1611,5 +1605,7 @@ void generate_monthly_bill_files(user_node *user) {
                                         total_mothly_bill);
 
         free(filename);
+        close_monthly_cdr_bill(current_monthly_bill);
+        current_monthly_bill = NULL;
     }
 }

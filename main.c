@@ -82,7 +82,6 @@ int main(int argc, char **argv){
         fprintf(stderr, "Error loading files, aborting execution\n");
         return EXIT_FAILURE;
     }
-    // Line 509842 in the csv has a great error example!
 
     printf("\nParsing rate record:\n");
     rate_node *rate_root = parse_rate_csv(call_rates);
@@ -132,7 +131,6 @@ int main(int argc, char **argv){
     printf("Generating bill files...\n\n");
     traverse_users_preorder(user_root, generate_monthly_bill_files);
 
-    // This functionality still missing
     printf( "Total number of calls: %li\n"
             "Total duration of calls: %li (seconds)\n"
             "Total price of calls: %.2f €\n", total_call_number, total_call_duration, total_call_price);
