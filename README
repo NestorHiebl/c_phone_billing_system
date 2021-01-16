@@ -1,0 +1,15 @@
+Generate monthly bill and CDR files for phone users based on two CSV files - one containing a record of calls and the other containing billing information.
+
+The correct formatting for the call record CSV is:
+[Caller number],[Callee number],[Call duration in seconds],[Date and time of call, formatted as yyyy-mm-dd hh:mm:ss]
+
+The correct formatting for the rate billing CSV is:
+[Region code],[Region code name],[Call price with decimals separated by a dot]
+
+A user profile for each calling party will be generated and used to produce monthly bill and call record / CDR files.
+
+Correct usage of the program is:
+[Executable] -r [Call rate CSV file] -c [Call record CSV file]
+
+Optional arguments:
+	-h	Help
