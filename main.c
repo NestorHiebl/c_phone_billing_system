@@ -33,8 +33,8 @@ int main(int argc, char **argv){
     if (argc < 2) {
         printf(     "Usage: main -r [Call rate CSV file] -c [Call record CSV file]\n"
                     "Generate monthly bill and CDR files for every calling party in the call "
-                    "record file based on the call rate file. The rate filename has to be passed"
-                    "with option -r and the call record filename has to be passed with option -c."
+                    "record file based on the call rate file. The rate filename has to be passed "
+                    "with option -r and the call record filename has to be passed with option -c.\n"
                     "Optional arguments:\n"
                     "\t-h\tHelp\n");
             
@@ -52,8 +52,8 @@ int main(int argc, char **argv){
         case 'h':
             printf( "Usage: main -r [Call rate CSV file] -c [Call record CSV file]\n"
                     "Generate monthly bill and CDR files for every calling party in the call "
-                    "record file based on the call rate file. The rate filename has to be passed"
-                    "with option -r and the call record filename has to be passed with option -c."
+                    "record file based on the call rate file. The rate filename has to be passed "
+                    "with option -r and the call record filename has to be passed with option -c.\n"
                     "Optional arguments:\n"
                     "\t-h\tHelp\n");
             return EXIT_SUCCESS;

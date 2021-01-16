@@ -18,6 +18,8 @@
 #ifndef CSV_TO_AVL_TREE_FUNC
     #define CSV_TO_AVL_TREE_FUNC
 
+        #define MAX_CSV_LINE 1024
+
         /**
          *      @typedef Call linked list
          * 

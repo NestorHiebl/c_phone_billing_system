@@ -86,14 +86,14 @@ int close_csv(FILE *filepointer) {
  */
 user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
 
-    char csv_line[1024];
+    char csv_line[MAX_CSV_LINE];
 
     user_node *root = NULL;
 
     // Used for debugging
     size_t line_counter = 1;
     while (!(feof(filename))) {
-        if ((fgets(csv_line, 1024, filename)) != NULL) {
+        if ((fgets(csv_line, MAX_CSV_LINE, filename)) != NULL) {
             
             // Going smoothly, the line has been loaded in successfuly
 
@@ -217,14 +217,14 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
  */
 rate_node *parse_rate_csv(FILE *filename) {
 
-    char csv_line[1024];
+    char csv_line[MAX_CSV_LINE];
 
     rate_node *root = NULL;
 
     // Used for debugging
     size_t line_counter = 1;
     while (!(feof(filename))) {
-        if ((fgets(csv_line, 1024, filename)) != NULL) {
+        if ((fgets(csv_line, MAX_CSV_LINE, filename)) != NULL) {
             
             // Going smoothly, the line has been loaded in successfuly
 
