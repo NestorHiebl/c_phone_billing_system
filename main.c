@@ -113,19 +113,6 @@ int main(int argc, char **argv){
     // Just to be safe
     traverse_users_preorder(user_root, calculate_user_stats);
 
-    #ifdef DEBUG
-
-        char *censor_test = censor_calee_number("123456789");
-    
-        printf("Censor callee number test: %s\n", censor_test);
-        free(censor_test); censor_test = NULL;
-
-        user_node *test_user_node = user_root;
-
-        generate_monthly_bill_files(test_user_node);
-
-    #endif
-
     printf("\nGenerating cdr files...\n");
     traverse_users_preorder(user_root, generate_monthly_cdr_files);
     printf("Generating bill files...\n\n");

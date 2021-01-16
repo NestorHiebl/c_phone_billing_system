@@ -429,7 +429,7 @@ char *validate_phone_number(char **phone_number) {
     size_t phone_number_len = strlen(*phone_number);
 
     if (phone_number_len > 15 /* Should be correct according to E.164 */) {
-        fprintf(stderr, "Phone number too long, aborting\n");
+        fprintf(stderr, "Phone number too long - ");
         return NULL;
     }
 
@@ -574,8 +574,6 @@ rate_node *search_by_longest_region_code_match(rate_node *root, const char *call
         attempt_length++;
     }
     //No match has been found
-    if (current_longest_match == NULL) printf("No match found for callee number \"%s\", aborting search\n", callee_number);
-    
     return current_longest_match;
 }
 
