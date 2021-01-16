@@ -23,6 +23,11 @@
  */
 //#define DEBUG
 
+
+size_t total_call_duration = 0;
+size_t total_call_number = 0;
+double total_call_price = 0;
+
 int main(int argc, char **argv){
 
     if (argc < 2) {
@@ -36,21 +41,6 @@ int main(int argc, char **argv){
             return EXIT_SUCCESS;
     }    
 
-    /**
-    *       @property Total call number
-    *       @brief The total number of calls in the given csv.
-    */
-    size_t total_call_number = 0;
-    /**
-    *       @property Total call duration
-    *       @brief The total duration of calls in the given csv.
-    */
-    size_t total_call_duration = 0;
-    /**
-    *       @property Total call price
-    *       @brief The total price of calls in the given csv.
-    */
-    double total_call_price = 0;
 
     char c = 0;
 
@@ -94,7 +84,7 @@ int main(int argc, char **argv){
     }
     // Line 509842 in the csv has a great error example!
 
-    printf("Parsing rate record:\n\n");
+    printf("\nParsing rate record:\n");
     rate_node *rate_root = parse_rate_csv(call_rates);
     if (rate_root == NULL) {
         fprintf(stderr, "Error: No valid data was found in the rate record. Aborting execution\n");
@@ -106,7 +96,7 @@ int main(int argc, char **argv){
         traverse_rates_inorder(rate_root, print_rate_node);
     #endif
 
-    printf("\nParsing call record:\n\n");
+    printf("\nParsing call record:\n");
     user_node *user_root = parse_call_csv(call_record, rate_root);
     if (user_root == NULL) {
         fprintf(stderr, "Error: No valid data was found in the call record. Aborting execution\n");
@@ -124,8 +114,6 @@ int main(int argc, char **argv){
     // Just to be safe
     traverse_users_preorder(user_root, calculate_user_stats);
 
-    printf("%li, %li, %f\n", total_call_number, total_call_duration, total_call_price);
-
     #ifdef DEBUG
 
         char *censor_test = censor_calee_number("123456789");
@@ -141,13 +129,13 @@ int main(int argc, char **argv){
 
     printf("\nGenerating cdr files...\n");
     traverse_users_preorder(user_root, generate_monthly_cdr_files);
-    printf("Generating bill files...\n");
+    printf("Generating bill files...\n\n");
     traverse_users_preorder(user_root, generate_monthly_bill_files);
 
     // This functionality still missing
     printf( "Total number of calls: %li\n"
             "Total duration of calls: %li (seconds)\n"
-            "Total price of calls: %.2f\n", total_call_number, total_call_duration, total_call_price);
+            "Total price of calls: %.2f €\n", total_call_number, total_call_duration, total_call_price);
 
     traverse_rates_postorder(rate_root, delete_rate_node);
     rate_root = NULL;

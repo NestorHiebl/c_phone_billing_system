@@ -107,7 +107,26 @@
             struct user_node *right;
 
         } user_node;
+
+        /**
+        *       @property Total call number
+        *       @brief The total number of calls in the given call record.
+        */
+        extern size_t total_call_number;
+
+        /**
+        *       @property Total call duration
+        *       @brief The total duration of calls in the given call record.
+        */
+        extern size_t total_call_duration;
+
+        /**
+        *       @property Total call price
+        *       @brief The total price of calls in the given call record.
+        */
+        extern double total_call_price;
         
+
         // Functions for file handling
 
         FILE *open_csv(const char* filename);

@@ -104,7 +104,7 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 
             } else if (feof(filename)) {
                 // We've reached the end of the file
-                printf("Call file ended\n");    
+                // printf("Call file ended\n");    
             } else {
                 // We're dealing with a really long line
                 printf("Call line longer than 1024 characters\n");
@@ -147,6 +147,17 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 continue;
             }
 
+            if (strcmp(caller_number_token, "Anonymous") == 0) {
+                // Anonymous caller, increment total call counter, total call duration counter and continue
+                // printf("Anonymous caller found on line %lu\n", line_counter);
+                line_counter++;
+                total_call_number++;
+                total_call_duration += atoi(duration_token);
+                // Not incrementing global price because anonymous callers cannot be billed
+                continue;
+            }
+            
+
             caller_number_token = validate_phone_number(&caller_number_token);
             callee_number_token = validate_phone_number(&callee_number_token);
             size_t year_token = 0;
@@ -175,7 +186,7 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 root = add_user_node(root, caller_number_token, callee_number_token, atoi(duration_token), year_token, month_token, day_token, rate_root);
 
             } else {
-                printf("Invalid region_code found on call line %lu\n", line_counter);
+                printf("Invalid caller or callee number found on call line %lu\n", line_counter);
                 line_counter++;
                 continue;
             }
@@ -224,7 +235,7 @@ rate_node *parse_rate_csv(FILE *filename) {
                 
             } else if (feof(filename)) {
                 // We've reached the end of the file
-                printf("File ended\n");    
+                // printf("File ended\n");    
             } else {
                 // We're dealing with a really long line
                 printf("Line longer than 1024 characters\n");
@@ -313,7 +324,7 @@ char *generate_cdr_filename(char *user_number, size_t datetime) {
         return NULL;
     }    
 
-    char *cdr_filename = malloc(strlen(user_number) + 20 /* 13 bytes are necessarry, 15 for extra breathing room*/);
+    char *cdr_filename = malloc(strlen(user_number) + 20 /* 14 bytes are necessarry, 20 for extra breathing room*/);
     if (cdr_filename == NULL) {
         fprintf(stderr, "Failed to allocate memory for cdr filename\n");
         return NULL;
@@ -660,7 +671,6 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
     new_node->month = month;
     new_node->day = day;
 
-    // Not yet tested!
     rate_node *longest_rate_match = search_by_longest_region_code_match(rate_root, callee_number);
 
     if (longest_rate_match == NULL) {
@@ -669,6 +679,11 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
     } else {
         new_node->price = (double) longest_rate_match->rate * duration;
     }
+
+    // Global counters incremented here
+    total_call_number++;
+    total_call_duration += new_node->duration;
+    total_call_price += new_node->price;
     
     if ((*head == NULL)) {
         // The list is being initialized
@@ -1489,9 +1504,6 @@ void generate_monthly_cdr_files(user_node *user) {
     return;
 }
 
-
-
-// Segfault somewehere in here
 void generate_monthly_bill_files(user_node *user) {
     // The current call being processed
     user_call_list *current_user_call = user->call_list_head;
@@ -1579,9 +1591,15 @@ void generate_monthly_bill_files(user_node *user) {
         size_t total_call_minutes = calculate_call_minutes(total_monthly_duration);
         size_t total_call_hours = calculate_call_hours(total_monthly_duration);
 
+        // !!!!!!!!!!!!
         char *filename = generate_monthly_bill_filename(user->number, current_datetime);
 
         current_monthly_bill = open_monthly_cdr_bill(filename);
+        if (current_monthly_bill == NULL) {
+            fprintf(stderr, "Error generating bill for %s %lu for user %s\n", month_string, current_datetime, user->number);
+            continue;
+        }
+        
 
         fprintf(current_monthly_bill,   "Invoice for %s for Subscriber %s\n"
                                         "Calls: %lu\n"
