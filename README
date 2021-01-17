@@ -1,3 +1,11 @@
+Complation:
+
+The custom functions are in the "csv_to_avl_tree.c" file. Full compilation command is:
+
+gcc -std=c99 -Wall -Wextra -pedantic -Werror main.c csv_to_avl_tree.c -o main
+
+Execution:
+
 Generate monthly bill and CDR files for phone users based on two CSV files - one containing a record of calls and the other containing billing information.
 
 The correct formatting for the call record CSV is:
@@ -6,6 +14,8 @@ The correct formatting for the call record CSV is:
 The correct formatting for the rate billing CSV is:
 [Region code],[Region code name],[Call price with decimals separated by a dot]
 
+Phone numbers are checked against the E.164 standard.
+
 A user profile for each calling party will be generated and used to produce monthly bill and call record / CDR files.
 
 Correct usage of the program is:
@@ -13,3 +23,7 @@ Correct usage of the program is:
 
 Optional arguments:
 	-h	Help
+
+Completed tasks:
+
+All except 6
