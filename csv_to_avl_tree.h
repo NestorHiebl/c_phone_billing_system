@@ -110,23 +110,7 @@
 
         } user_node;
 
-        /**
-        *       @property Total call number
-        *       @brief The total number of calls in the given call record.
-        */
-        extern size_t total_call_number;
 
-        /**
-        *       @property Total call duration
-        *       @brief The total duration of calls in the given call record.
-        */
-        extern size_t total_call_duration;
-
-        /**
-        *       @property Total call price
-        *       @brief The total price of calls in the given call record.
-        */
-        extern double total_call_price;
         
 
         // Functions for file handling
@@ -135,7 +119,7 @@
         int close_csv(FILE *filepointer);
 
         rate_node *parse_rate_csv(FILE *filename);
-        user_node *parse_call_csv(FILE *filename, rate_node *rate_root);
+        user_node *parse_call_csv(FILE *filename, rate_node *rate_root, size_t *total_call_number, size_t *total_call_duration, double *total_call_price);
 
         char *generate_cdr_filename(char *user_number, size_t datetime);
         char *generate_monthly_bill_filename(char *user_number, size_t datetime);
@@ -159,7 +143,7 @@
 
         // Call linked list functions
 
-        int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root);
+        int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root, size_t *total_call_number, size_t *total_call_duration, double *total_call_price);
         void print_call_list(user_call_list *head, size_t start_index, size_t end_index);
         int delete_call_list(user_call_list **head);
         size_t get_call_node_datetime(user_call_list *node);
@@ -184,7 +168,7 @@
         
         // User AVL Tree functions
 
-        user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root);
+        user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root, size_t *total_call_number, size_t *total_call_duration, double *total_call_price);
         user_node *make_user_node(const char *number);
         
         int get_user_node_height(user_node *node);

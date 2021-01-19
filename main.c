@@ -23,11 +23,6 @@
  */
 //#define DEBUG
 
-
-size_t total_call_duration = 0;
-size_t total_call_number = 0;
-double total_call_price = 0;
-
 int main(int argc, char **argv){
 
     if (argc < 2) {
@@ -46,6 +41,24 @@ int main(int argc, char **argv){
 
     FILE *call_rates = NULL;
     FILE *call_record = NULL;
+
+    /**
+    *       @property Total call number
+    *       @brief The total number of calls in the given call record.
+    */
+    size_t total_call_number = 0;
+
+    /**
+    *       @property Total call duration
+    *       @brief The total duration of calls in the given call record.
+    */
+    size_t total_call_duration = 0;
+
+    /**
+    *       @property Total call price
+    *       @brief The total price of calls in the given call record.
+    */
+    double total_call_price = 0;
 
     while ((c = getopt(argc, argv, "hr:c:")) != -1) {
         switch (c) {
@@ -96,7 +109,7 @@ int main(int argc, char **argv){
     #endif
 
     printf("\nParsing call record:\n");
-    user_node *user_root = parse_call_csv(call_record, rate_root);
+    user_node *user_root = parse_call_csv(call_record, rate_root, &total_call_number, &total_call_duration, &total_call_price);
     if (user_root == NULL) {
         fprintf(stderr, "Error: No valid data was found in the call record. Aborting execution\n");
         return EXIT_FAILURE;

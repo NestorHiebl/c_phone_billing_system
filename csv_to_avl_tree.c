@@ -26,7 +26,17 @@
  *      @returns The file pointer to given file, or NULL if the file is not found or handling has failed.
  */
 FILE *open_csv(const char* filename){
+    if (filename == NULL) {
+        fprintf(stderr, "No filename given, aborting execution\n");
+        return NULL;
+    }
+    
     size_t filename_len = strlen(filename);
+    if (filename_len <= 4) {
+        fprintf(stderr, "Filename too short, aborting execution\n");
+        return NULL;
+    }
+    
     
     // Checks if the passed filename ends in ".csv"
     if ((strcmp(&filename[filename_len - 4], ".csv")) != 0) {
@@ -77,6 +87,8 @@ int close_csv(FILE *filepointer) {
  *      @li A row in the csv is longer than 1024 characters. The function will notify you, but won't attempt to salvage the row.
  *      @li A field is missing. Strtok ignores consecutive delimiters, so any rows with NaN fields will be discarded.
  *      @li A datetime field is formatted incorrectly. The proper format is @c yyyy-mm-dd @c hh:mm:ss .
+ *      Special handling is in place for anonymous calls. If a the first field in a row is "Anonymous" the "total"
+ *      variables will be updated, but the user tree will not be appended to.
  * 
  *      @brief Builds a full user avl tree with a call linked list starting at each node list based on a csv file pointer.
  *      
@@ -84,7 +96,7 @@ int close_csv(FILE *filepointer) {
  * 
  *      @returns A pointer to the root of the generated avl tree.
  */
-user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
+user_node *parse_call_csv(FILE *filename, rate_node *rate_root, size_t *total_call_number, size_t *total_call_duration, double *total_call_price) {
 
     char csv_line[MAX_CSV_LINE];
 
@@ -151,8 +163,8 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 // Anonymous caller, increment total call counter, total call duration counter and continue
                 // printf("Anonymous caller found on line %lu\n", line_counter);
                 line_counter++;
-                total_call_number++;
-                total_call_duration += atoi(duration_token);
+                (*total_call_number)++;
+                (*total_call_duration) += atoi(duration_token);
                 // Not incrementing global price because anonymous callers cannot be billed
                 continue;
             }
@@ -183,7 +195,7 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root) {
                 * The necesarry data has been collected, create the node *
                 *********************************************************/
                 
-                root = add_user_node(root, caller_number_token, callee_number_token, atoi(duration_token), year_token, month_token, day_token, rate_root);
+                root = add_user_node(root, caller_number_token, callee_number_token, atoi(duration_token), year_token, month_token, day_token, rate_root, total_call_number, total_call_duration, total_call_price);
 
             } else {
                 printf("Invalid caller or callee number found on call line %lu\n", line_counter);
@@ -642,7 +654,7 @@ int max(int a, int b) {
  * 
  *      @returns 1 if the function suceeds, 0 if it fails.
  */
-int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root) {
+int insert_call(user_call_list **head, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root, size_t *total_call_number, size_t *total_call_duration, double *total_call_price) {
 
     if (callee_number == NULL) {
         fprintf(stderr, "Callee number string empty, aborting\n");
@@ -679,9 +691,9 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
     }
 
     // Global counters incremented here
-    total_call_number++;
-    total_call_duration += new_node->duration;
-    total_call_price += new_node->price;
+    (*total_call_number)++;
+    (*total_call_duration) += new_node->duration;
+    (*total_call_price) += new_node->price;
     
     if ((*head == NULL)) {
         // The list is being initialized
@@ -1124,7 +1136,7 @@ rate_node *search_rate_tree(rate_node *root, const char *region_code) {
  * 
  *      @returns The tree's new root.
  */
-user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root) {
+user_node *add_user_node(user_node *node, const char *caller_number, char *callee_number, size_t duration, size_t year, size_t month, size_t day, rate_node *rate_root, size_t *total_call_number, size_t *total_call_duration, double *total_call_price) {
     if (caller_number == NULL) {
         fprintf(stderr, "Number string empty, aborting\n");
         return NULL;
@@ -1135,7 +1147,7 @@ user_node *add_user_node(user_node *node, const char *caller_number, char *calle
         user_node *temp_new_user_node = make_user_node(caller_number);
 
         // Inserting into the call linked list
-        insert_call(&(temp_new_user_node->call_list_head), callee_number, duration, year, month, day, rate_root);
+        insert_call(&(temp_new_user_node->call_list_head), callee_number, duration, year, month, day, rate_root, total_call_number, total_call_duration, total_call_price);
 
         calculate_user_stats(temp_new_user_node);
 
@@ -1144,16 +1156,16 @@ user_node *add_user_node(user_node *node, const char *caller_number, char *calle
 
     if (strcmp(caller_number, node->number) < 0) {
         // Going left
-        node->left = add_user_node(node->left, caller_number, callee_number, duration, year, month, day, rate_root);
+        node->left = add_user_node(node->left, caller_number, callee_number, duration, year, month, day, rate_root, total_call_number, total_call_duration, total_call_price);
     } else if (strcmp(caller_number, node->number) > 0) {
         // Going right
-        node->right = add_user_node(node->right, caller_number, callee_number, duration, year, month, day, rate_root);
+        node->right = add_user_node(node->right, caller_number, callee_number, duration, year, month, day, rate_root, total_call_number, total_call_duration, total_call_price);
     } else {
         // The user already has a node - in this case we just want to add to their call data linked list
         // printf("User present in tree, appending call data\n");
 
         // Inserting into the call linked list
-        insert_call(&(node->call_list_head), callee_number, duration, year, month, day, rate_root);
+        insert_call(&(node->call_list_head), callee_number, duration, year, month, day, rate_root, total_call_number, total_call_duration, total_call_price);
 
         calculate_user_stats(node);
 
