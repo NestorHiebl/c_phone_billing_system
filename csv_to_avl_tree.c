@@ -87,8 +87,7 @@ int close_csv(FILE *filepointer) {
  *      @li A row in the csv is longer than 1024 characters. The function will notify you, but won't attempt to salvage the row.
  *      @li A field is missing. Strtok ignores consecutive delimiters, so any rows with NaN fields will be discarded.
  *      @li A datetime field is formatted incorrectly. The proper format is @c yyyy-mm-dd @c hh:mm:ss .
- *      Special handling is in place for anonymous calls. If a the first field in a row is "Anonymous" the "total"
- *      variables will be updated, but the user tree will not be appended to.
+ *      No special handling is in place for anonymous calls.
  * 
  *      @brief Builds a full user avl tree with a call linked list starting at each node list based on a csv file pointer.
  *      
@@ -157,20 +156,7 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root, size_t *total_ca
                 fprintf(stderr, "Additional field found on call line %lu\n", line_counter);
                 line_counter++;
                 continue;
-            }
-
-
-            // Needs to be moved into the caller validation function
-            if (strcmp(caller_number_token, "Anonymous") == 0) {
-                // Anonymous caller, increment total call counter, total call duration counter and continue
-                // printf("Anonymous caller found on line %lu\n", line_counter);
-                line_counter++;
-                (*total_call_number)++;
-                (*total_call_duration) += atoi(duration_token);
-                // Not incrementing global price because anonymous callers cannot be billed
-                continue;
-            }
-            
+            }            
 
             caller_number_token = validate_phone_number(&caller_number_token);
             callee_number_token = validate_phone_number(&callee_number_token);
@@ -425,7 +411,8 @@ int close_monthly_cdr_bill(FILE *filepointer) {
 
 /**
  *      Validate phone number
- *      @brief Checks if a phone number is legal based on E.164 and removes leading zeros.
+ *      @brief Checks if a phone number is legal based on E.164 and removes leading zeros. An exception is made for the
+ *      string "Anonymous", which is returned unchanged.
  *      
  *      @param phone_number The number to be checked.
  *      @return A pointer to the validated number or NULL if it was found to be invalid.
@@ -435,6 +422,12 @@ char *validate_phone_number(char **phone_number) {
         fprintf(stderr, "Cannot validate NULL string\n");
         return NULL;
     }
+
+    if (strcmp(*phone_number, "Anonymous") == 0) {
+        printf("Anon found!\n");
+        return *phone_number;
+    }
+    
     
     while (**phone_number == '0') {
         *phone_number = (*phone_number) + 1;
