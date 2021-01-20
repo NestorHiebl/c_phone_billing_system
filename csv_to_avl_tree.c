@@ -159,6 +159,8 @@ user_node *parse_call_csv(FILE *filename, rate_node *rate_root, size_t *total_ca
                 continue;
             }
 
+
+            // Needs to be moved into the caller validation function
             if (strcmp(caller_number_token, "Anonymous") == 0) {
                 // Anonymous caller, increment total call counter, total call duration counter and continue
                 // printf("Anonymous caller found on line %lu\n", line_counter);
@@ -336,7 +338,7 @@ char *generate_cdr_filename(char *user_number, size_t datetime) {
         return NULL;
     }    
 
-    char *cdr_filename = malloc(strlen(user_number) + 20 /* 14 bytes are necessarry, 20 for extra breathing room*/);
+    char *cdr_filename = malloc((strlen(user_number) + 20) * sizeof(char) /* 14 bytes are necessarry, 20 for extra breathing room*/);
     if (cdr_filename == NULL) {
         fprintf(stderr, "Failed to allocate memory for cdr filename\n");
         return NULL;
@@ -365,7 +367,7 @@ char *generate_monthly_bill_filename(char *user_number, size_t datetime) {
         return NULL;
     }
 
-    char *monthly_bill_filename = malloc(strlen(user_number) + 20 /* 9 bytes are necessarry, 20 for extra breathing room*/);
+    char *monthly_bill_filename = malloc((strlen(user_number) + 20) * sizeof(char) /* 9 bytes are necessarry, 20 for extra breathing room*/);
     if (monthly_bill_filename == NULL) {
         fprintf(stderr, "Failed to allocate memory for montly bill filename\n");
         return NULL;
@@ -476,7 +478,7 @@ char *censor_calee_number(const char *callee_number) {
         return NULL;
     }
 
-    char *callee_number_censored = malloc(callee_number_len + 1);
+    char *callee_number_censored = malloc((callee_number_len + 1) * sizeof(char));
     if (callee_number_censored == NULL) {
         fprintf(stderr, "Couldn't allocate memory for censoring a phone number\n");
         return NULL;
@@ -668,7 +670,7 @@ int insert_call(user_call_list **head, char *callee_number, size_t duration, siz
     }
 
     // Initialize callee number
-    new_node->callee = malloc(strlen(callee_number) + 1);
+    new_node->callee = malloc((strlen(callee_number) + 1) * sizeof(char));
     if (new_node->callee == NULL) {
         fprintf(stderr, "Not enough memory to initialize callee number\n");
         return 0;
@@ -926,7 +928,7 @@ rate_node *make_rate_node(const char *region_code, double rate) {
         return NULL;
     }
     
-    newNode->region_code = malloc(strlen(region_code) + 1);
+    newNode->region_code = malloc((strlen(region_code) + 1) * sizeof(char));
     if (newNode->region_code == NULL) {
         fprintf(stderr, "Not enough memory to initialize region code field, aborting\n");
         free(newNode);
@@ -1223,7 +1225,7 @@ user_node *make_user_node(const char *caller_number) {
         return NULL;
     }
     
-    newNode->number = malloc(strlen(caller_number) + 1);
+    newNode->number = malloc((strlen(caller_number) + 1) * sizeof(char));
     if (newNode->number == NULL) {
         fprintf(stderr, "Not enough memory to initialize caller number field, aborting\n");
         free(newNode);

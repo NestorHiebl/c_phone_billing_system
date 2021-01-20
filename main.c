@@ -71,6 +71,7 @@ int main(int argc, char **argv){
                     "\t-h\tHelp\n");
             return EXIT_SUCCESS;
             break;
+
         case 'r':
             call_rates = open_csv(optarg);
             if (call_rates == NULL) {
@@ -78,6 +79,7 @@ int main(int argc, char **argv){
                 return EXIT_FAILURE;
             }
             break;
+
         case 'c':
             call_record = open_csv(optarg);
             if (call_record == NULL) {
@@ -85,6 +87,7 @@ int main(int argc, char **argv){
                 return EXIT_FAILURE;
             }            
             break;
+            
         default:
             fprintf(stderr, "Unknown option '%c' found\n", c);
             break;
