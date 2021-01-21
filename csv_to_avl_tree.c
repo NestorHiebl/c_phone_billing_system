@@ -424,7 +424,6 @@ char *validate_phone_number(char **phone_number) {
     }
 
     if (strcmp(*phone_number, "Anonymous") == 0) {
-        printf("Anon found!\n");
         return *phone_number;
     }
     
